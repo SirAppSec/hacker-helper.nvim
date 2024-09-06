@@ -45,7 +45,10 @@ USING IT                            *hacker-helper-docs-requirements-using-it*
             encode_url = "u",     -- <leader>rdeu (URL Encode)
             decode_url = "u",     -- <leader>rdu (URL Decode)
             encode_base64 = "b",  -- <leader>rdeb (Base64 Encode)
-            decode_base64 = "b",  -- <leader>rdb (Base64 Decode)
+            encode_html = "h",  -- <leader>rdeh (HTML Encode)
+            decode_html = "h",  -- <leader>rdh (HTML Decode)
+            encode_ascii_hex = "x",  -- <leader>rdex (ASCII Hex Encode)
+            decode_ascii_hex = "x",  -- <leader>rdx (ASCII Hex Decode)       decode_base64 = "b",  -- <leader>rdb (Base64 Decode)
           },
         },
       },
