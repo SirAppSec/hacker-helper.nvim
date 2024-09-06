@@ -1,6 +1,24 @@
 -- main module file
 local module = require("hacker-helper.module")
--- Try to load mime (part of luasocket) and handle missing dependency
+-- Add LuaRocks paths dynamically
+local function add_luarocks_path()
+  local handle = io.popen("luarocks path --lr-path")
+  local luarocks_path = handle:read("*a")
+  handle:close()
+
+  local handle_cpath = io.popen("luarocks path --lr-cpath")
+  local luarocks_cpath = handle_cpath:read("*a")
+  handle_cpath:close()
+
+  -- Add LuaRocks paths
+  if not string.find(package.path, luarocks_path, 1, true) then
+    package.path = package.path .. ";" .. luarocks_path
+  end
+
+  if not string.find(package.cpath, luarocks_cpath, 1, true) then
+    package.cpath = package.cpath .. ";" .. luarocks_cpath
+  end
+end
 
 -- Function to check if LuaRocks is installed
 local function is_luarocks_installed()
@@ -31,8 +49,18 @@ local function ensure_luasocket_installed()
     if result == 0 then
       -- Installation succeeded
       vim.notify("LuaSocket successfully installed!", vim.log.levels.INFO)
+
+      -- Add LuaRocks paths dynamically
+      add_luarocks_path()
+
       -- Reload mime module
-      mime = require("mime")
+      local mime_ok, mime_new = pcall(require, "mime")
+      if not mime_ok then
+        vim.notify("Error: LuaSocket installed but mime module still not found.", vim.log.levels.ERROR)
+        return false
+      else
+        mime = mime_new
+      end
     else
       -- Installation failed, notify the user
       vim.notify("Error: Failed to install LuaSocket. Please install it manually.", vim.log.levels.ERROR)
