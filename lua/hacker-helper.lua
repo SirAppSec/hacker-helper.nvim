@@ -1,5 +1,9 @@
+-- utils
+local selection_util = require("hacker-helper.selection_util")
+
 -- main module file
 local module = require("hacker-helper.module")
+
 -- Notify the user if LuaSocket is not installed
 local function check_luasocket_installed()
   local ok, mime = pcall(require, "mime")
@@ -8,7 +12,10 @@ local function check_luasocket_installed()
       "Hacker Helper Error: LuaSocket (luasocket) is not installed. Please install it using LuaRocks: luarocks install luasocket",
       vim.log.levels.ERROR
     )
-    vim.notify("Hacker Helper Error: sudo apt install luarocks", vim.log.levels.ERROR)
+    vim.notify(
+      "Hacker Helper Error: sudo apt install luarocks && sudo luarocks install luasocket",
+      vim.log.levels.ERROR
+    )
     return nil
   end
   return mime
@@ -31,6 +38,10 @@ local config = {
   opt = "Hello!",
 }
 
+local mime = check_luasocket_installed()
+if not mime then
+  return
+end -- Ensure LuaSocket is installed
 ---@class MyModule
 local M = {}
 ---@type Config
@@ -41,10 +52,6 @@ M.config = config
 ---@param user_config Config? User-provided configuration
 M.setup = function(user_config)
   -- Check if luasocket is installed
-  local mime = check_luasocket_installed()
-  if not mime then
-    return
-  end -- Ensure LuaSocket is installed
   -- Merge user configuration with defaults
   M.config = vim.tbl_deep_extend("force", M.config, user_config or {})
 
@@ -72,97 +79,75 @@ M.setup = function(user_config)
     { noremap = true, silent = true, desc = "Decoder" }
   )
 
-  -- Key mappings for encoding and decoding
-  vim.keymap.set("v", M.config.prefix .. M.config.keys.encode_prefix .. M.config.keys.encode_url, function()
-    M.transform_selection("url", "encode")
-  end, { noremap = true, silent = true, desc = "URL Encode" })
+  -- Key mappings for Base64 and URL encoding/decoding using config prefixes
+
+  -- Base64 Encode
   vim.keymap.set("v", M.config.prefix .. M.config.keys.encode_prefix .. M.config.keys.encode_base64, function()
-    M.transform_selection("base64", "encode")
+    selection_util.transform_selection(function(text, selection_type)
+      return M.transform_func(text, selection_type, "encode", "base64")
+    end)
   end, { noremap = true, silent = true, desc = "Base64 Encode" })
 
-  vim.keymap.set("v", M.config.prefix .. M.config.keys.decode_prefix .. M.config.keys.decode_url, function()
-    M.transform_selection("url", "decode")
-  end, { noremap = true, silent = true, desc = "URL Decode" })
+  -- Base64 Decode
   vim.keymap.set("v", M.config.prefix .. M.config.keys.decode_prefix .. M.config.keys.decode_base64, function()
-    M.transform_selection("base64", "decode")
+    selection_util.transform_selection(function(text, selection_type)
+      return M.transform_func(text, selection_type, "decode", "base64")
+    end)
   end, { noremap = true, silent = true, desc = "Base64 Decode" })
+
+  -- URL Encode
+  vim.keymap.set("v", M.config.prefix .. M.config.keys.encode_prefix .. M.config.keys.encode_url, function()
+    selection_util.transform_selection(function(text, selection_type)
+      return M.transform_func(text, selection_type, "encode", "url")
+    end)
+  end, { noremap = true, silent = true, desc = "URL Encode" })
+
+  -- URL Decode
+  vim.keymap.set("v", M.config.prefix .. M.config.keys.decode_prefix .. M.config.keys.decode_url, function()
+    selection_util.transform_selection(function(text, selection_type)
+      return M.transform_func(text, selection_type, "decode", "url")
+    end)
+  end, { noremap = true, silent = true, desc = "URL Decode" })
 end
 -- Function to handle encoding/decoding based on selection
-M.transform_selection = function(type, mode)
-  local mime = check_luasocket_installed()
-  if not mime then
-    return
-  end -- Ensure LuaSocket is installed
-
-  -- Capture the selection
-  local start_pos = vim.fn.getpos("'<")
-  local end_pos = vim.fn.getpos("'>")
-
-  local start_line = start_pos[2]
-  local start_col = start_pos[3] - 1 -- 0-based index
-
-  local end_line = end_pos[2]
-  local end_col = end_pos[3] -- inclusive
-
-  -- Get selected lines
-  local lines = vim.fn.getline(start_line, end_line)
-
-  -- Handle full-line selection (V mode) and partial selection
-  if vim.fn.mode() == "V" then
-    -- Full line selection, transform entire lines
-    for i, line in ipairs(lines) do
-      lines[i] = M.transform_text(line, type, mode, mime)
-    end
-    -- Replace the entire range with transformed lines
-    vim.fn.setline(start_line, lines)
-  else
-    -- Partial selection within a single line
-    if start_line == end_line then
-      -- Handle partial selection on a single line
-      local line = lines[1]
-      local selection = string.sub(line, start_col + 1, end_col)
-      local transformed = M.transform_text(selection, type, mode, mime)
-      local new_line = string.sub(line, 1, start_col) .. transformed .. string.sub(line, end_col + 1)
-      vim.fn.setline(start_line, new_line)
-    else
-      -- Handle multi-line selection, applying the transformation to partial lines
-      lines[1] = string.sub(lines[1], 1, start_col)
-        .. M.transform_text(string.sub(lines[1], start_col + 1), type, mode, mime)
-      lines[#lines] = M.transform_text(string.sub(lines[#lines], 1, end_col), type, mode, mime)
-        .. string.sub(lines[#lines], end_col + 1)
-      for i = 2, #lines - 1 do
-        lines[i] = M.transform_text(lines[i], type, mode, mime)
-      end
-      -- Replace the entire range with transformed lines
-      vim.fn.setline(start_line, lines)
-    end
-  end
+-- Base64 encoding and decoding utility functions
+M.base64_encode = function(text)
+  return mime.b64(text)
 end
 
-M.transform_text = function(text, mode, type, mime)
-  mime = mime or require("mime") -- Ensure LuaSocket's mime module is loaded
+M.base64_decode = function(text)
+  return mime.unb64(text)
+end
 
-  if type == "url" then
-    if mode == "encode" then
-      return text:gsub("([^%w%.%-_])", function(c)
-        return string.format("%%%02X", string.byte(c))
-      end)
-    elseif mode == "decode" then
-      return text:gsub("%%(%x%x)", function(hex)
-        return string.char(tonumber(hex, 16))
-      end)
+-- URL encoding and decoding utility functions
+M.url_encode = function(text)
+  return text:gsub("([^%w%.%-_])", function(c)
+    return string.format("%%%02X", string.byte(c))
+  end)
+end
+
+M.url_decode = function(text)
+  return text:gsub("%%(%x%x)", function(hex)
+    return string.char(tonumber(hex, 16))
+  end)
+end
+
+-- Transform function for encoding or decoding text based on type and selection type
+M.transform_func = function(text, selection_type, encode_or_decode, encoding_type)
+  if encoding_type == "base64" then
+    if encode_or_decode == "encode" then
+      return M.base64_encode(text)
+    elseif encode_or_decode == "decode" then
+      return M.base64_decode(text)
     end
-  elseif type == "base64" then
-    if mode == "encode" then
-      local encoded = mime.b64(text) -- Use only the first return value
-      return encoded
-    elseif mode == "decode" then
-      local decoded = mime.unb64(text) -- Use only the first return value
-      return decoded
+  elseif encoding_type == "url" then
+    if encode_or_decode == "encode" then
+      return M.url_encode(text)
+    elseif encode_or_decode == "decode" then
+      return M.url_decode(text)
     end
   end
-
-  return text -- return the original text if no valid type or mode is provided
+  return text
 end
 
 M.hello = function()
