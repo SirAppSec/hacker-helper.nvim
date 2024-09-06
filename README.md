@@ -7,6 +7,12 @@ A few Snippets to help hacking
 
 1. Execute commands in toggle term by selection
 
+
+# Requirements
+Luarocks is required(luasocket mime for encoding decoding):
+```bash
+sudo apt install luarocks -y
+```
 ## Using it
 
 

@@ -15,7 +15,11 @@ local function ensure_luasocket_installed()
     -- Check if LuaRocks is installed
     if not is_luarocks_installed() then
       -- LuaRocks is not installed, notify the user
-      vim.notify("Error: LuaRocks is not installed. Please install LuaRocks to use this feature.", vim.log.levels.ERROR)
+      vim.notify(
+        "Hacker Helper Error: LuaRocks is not installed. Please install LuaRocks to use this feature.",
+        vim.log.levels.ERROR
+      )
+      vim.notify("Hacker Helper Error: sudo apt install luarocks", vim.log.levels.ERROR)
       return false
     end
 
@@ -116,21 +120,17 @@ M.setup = function(user_config)
 end
 -- Function to handle encoding
 M.encode_selected_text = function(type)
-  -- Get the selected text in visual mode
   local start_line = vim.fn.getpos("'<")[2]
   local end_line = vim.fn.getpos("'>")[2]
   local selection = vim.fn.getline(start_line, end_line)
 
-  -- Encode based on type
   if type == "url" then
     local encoded = vim.fn.escape(vim.fn.join(selection, "\n"), " ")
-    -- URL encode special characters
     encoded = encoded:gsub("\n", ""):gsub(" ", "%%20"):gsub("([^%w%.%-_])", function(c)
       return string.format("%%%02X", string.byte(c))
     end)
     vim.fn.setline(start_line, vim.split(encoded, "\n"))
   elseif type == "base64" then
-    -- Use the mime library for base64 encoding
     local encoded = mime.b64(vim.fn.join(selection, "\n"))
     vim.fn.setline(start_line, vim.split(encoded, "\n"))
   end
@@ -138,20 +138,16 @@ end
 
 -- Function to handle decoding
 M.decode_selected_text = function(type)
-  -- Get the selected text in visual mode
   local start_line = vim.fn.getpos("'<")[2]
   local end_line = vim.fn.getpos("'>")[2]
   local selection = vim.fn.getline(start_line, end_line)
 
-  -- Decode based on type
   if type == "url" then
-    -- URL decode special characters
     local decoded = vim.fn.join(selection, "\n"):gsub("%%(%x%x)", function(hex)
       return string.char(tonumber(hex, 16))
     end)
     vim.fn.setline(start_line, vim.split(decoded, "\n"))
   elseif type == "base64" then
-    -- Use the mime library for base64 decoding
     local decoded = mime.unb64(vim.fn.join(selection, "\n"))
     vim.fn.setline(start_line, vim.split(decoded, "\n"))
   end
