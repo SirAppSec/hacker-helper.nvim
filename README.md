@@ -11,7 +11,14 @@ A few Snippets to help hacking
 
 
 ```
-{ "SirAppsec/hacker-helper.nvim", lazy = true }
+{
+    "SirAppsec/hacker-helper.nvim",
+    opts = {
+        keys = {
+            run_exec = "<leader>re",  -- Run: Execute Command from Line Selection
+        }
+    }
+}
 ```
 
 
