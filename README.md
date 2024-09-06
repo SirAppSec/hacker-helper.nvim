@@ -21,9 +21,6 @@ sudo apt install luarocks -y
 return {
   {
     "SirAppsec/hacker-helper.nvim",
-    dependencies = {
-            { 'luarocks/luasocket', rocks = 'luasocket' }
-        },
     opts = {
       prefix = "<leader>r", -- Change base prefix to <leader>r
       keys = {

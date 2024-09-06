@@ -97,18 +97,18 @@ M.setup = function(user_config)
 
   -- Encoding key mappings
   vim.keymap.set("v", M.config.prefix .. M.config.keys.encode_prefix .. M.config.keys.encode_url, function()
-    module.encode_selected_text("url")
+    M.encode_selected_text("url")
   end, { noremap = true, silent = true, desc = "URL Encode" })
   vim.keymap.set("v", M.config.prefix .. M.config.keys.encode_prefix .. M.config.keys.encode_base64, function()
-    module.encode_selected_text("base64")
+    M.encode_selected_text("base64")
   end, { noremap = true, silent = true, desc = "Base64 Encode" })
 
   -- Decoding key mappings
   vim.keymap.set("v", M.config.prefix .. M.config.keys.decode_prefix .. M.config.keys.decode_url, function()
-    module.decode_selected_text("url")
+    M.decode_selected_text("url")
   end, { noremap = true, silent = true, desc = "URL Decode" })
   vim.keymap.set("v", M.config.prefix .. M.config.keys.decode_prefix .. M.config.keys.decode_base64, function()
-    module.decode_selected_text("base64")
+    M.decode_selected_text("base64")
   end, { noremap = true, silent = true, desc = "Base64 Decode" })
   -- Set key mappings using vim.keymap.set, including the description
   vim.keymap.set("n", full_run_exec_mapping, function()
@@ -129,10 +129,21 @@ M.encode_selected_text = function(type)
     encoded = encoded:gsub("\n", ""):gsub(" ", "%%20"):gsub("([^%w%.%-_])", function(c)
       return string.format("%%%02X", string.byte(c))
     end)
-    vim.fn.setline(start_line, vim.split(encoded, "\n"))
+    -- If encoded has multiple lines, set them
+    local lines = vim.split(encoded, "\n")
+    if #lines == 1 then
+      vim.fn.setline(start_line, lines[1])
+    else
+      vim.fn.setline(start_line, lines)
+    end
   elseif type == "base64" then
     local encoded = mime.b64(vim.fn.join(selection, "\n"))
-    vim.fn.setline(start_line, vim.split(encoded, "\n"))
+    local lines = vim.split(encoded, "\n")
+    if #lines == 1 then
+      vim.fn.setline(start_line, lines[1])
+    else
+      vim.fn.setline(start_line, lines)
+    end
   end
 end
 
@@ -146,10 +157,20 @@ M.decode_selected_text = function(type)
     local decoded = vim.fn.join(selection, "\n"):gsub("%%(%x%x)", function(hex)
       return string.char(tonumber(hex, 16))
     end)
-    vim.fn.setline(start_line, vim.split(decoded, "\n"))
+    local lines = vim.split(decoded, "\n")
+    if #lines == 1 then
+      vim.fn.setline(start_line, lines[1])
+    else
+      vim.fn.setline(start_line, lines)
+    end
   elseif type == "base64" then
     local decoded = mime.unb64(vim.fn.join(selection, "\n"))
-    vim.fn.setline(start_line, vim.split(decoded, "\n"))
+    local lines = vim.split(decoded, "\n")
+    if #lines == 1 then
+      vim.fn.setline(start_line, lines[1])
+    else
+      vim.fn.setline(start_line, lines)
+    end
   end
 end
 
