@@ -14,7 +14,6 @@ local config = {
 
 ---@class MyModule
 local M = {}
-
 ---@type Config
 M.config = config
 

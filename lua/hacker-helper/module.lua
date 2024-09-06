@@ -14,12 +14,12 @@ end
 -- Function to execute the current line or visual selection in an existing terminal
 function M.exec_line_or_selection_in_term()
   -- Initialize the toggleterm plugin if not already done
-  local ok, toggleterm = pcall(require, 'toggleterm')
+  local ok, toggleterm = pcall(require, "toggleterm")
   if ok then
-    toggleterm.setup {
-      direction = 'vertical',
+    toggleterm.setup({
+      direction = "vertical",
       size = 50,
-    }
+    })
   else
     print("toggleterm is not installed or cannot be loaded.")
     return
@@ -28,14 +28,14 @@ function M.exec_line_or_selection_in_term()
   local mode = vim.api.nvim_get_mode().mode
   local lines = {}
 
-  if mode == 'v' then
+  if mode == "v" then
     -- Get the visually selected lines
     local start_pos = vim.fn.getpos("'<")
     local end_pos = vim.fn.getpos("'>")
     lines = vim.fn.getline(start_pos[2], end_pos[2])
   else
     -- Get the current line
-    table.insert(lines, vim.fn.getline('.'))
+    table.insert(lines, vim.fn.getline("."))
   end
 
   -- Find the existing terminal buffer
@@ -43,7 +43,7 @@ function M.exec_line_or_selection_in_term()
   local buffers = vim.api.nvim_list_bufs()
 
   for _, buf in ipairs(buffers) do
-    if vim.api.nvim_buf_get_option(buf, 'buftype') == 'terminal' then
+    if vim.api.nvim_buf_get_option(buf, "buftype") == "terminal" then
       term_bufnr = buf
       break
     end

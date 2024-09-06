@@ -11,13 +11,17 @@ A few Snippets to help hacking
 
 
 ```
-{
+# Add to plugins/hacker-helper.lua
+return {
+  {
     "SirAppsec/hacker-helper.nvim",
     opts = {
-        keys = {
-            run_exec = "<leader>re",  -- Run: Execute Command from Line Selection
-        }
-    }
+      prefix = "<leader>r", -- Change base prefix to <leader>r
+      keys = {
+        run_exec = "e", -- <leader>re (Execute Command in Terminal)
+      },
+    },
+  },
 }
 ```
 
