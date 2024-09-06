@@ -29,5 +29,14 @@ jobs:
           neovim: true
           version: ${{ matrix.nvim-versions }}
 
+      - name: Install Lua and LuaRocks
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y luarocks lua5.1
+
+      - name: Install LuaSocket
+        run: |
+          sudo luarocks install luasocket
+
       - name: run tests
         run: make test
