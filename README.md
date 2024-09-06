@@ -12,6 +12,7 @@ A few Snippets to help hacking
 Luarocks is required(luasocket mime for encoding decoding):
 ```bash
 sudo apt install luarocks -y
+sudo luarocks install luasocket
 ```
 ## Using it
 

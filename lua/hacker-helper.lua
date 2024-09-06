@@ -1,71 +1,15 @@
 -- main module file
 local module = require("hacker-helper.module")
--- Add LuaRocks paths dynamically
-local function add_luarocks_path()
-  local handle = io.popen("luarocks path --lr-path")
-  local luarocks_path = handle:read("*a")
-  handle:close()
-
-  local handle_cpath = io.popen("luarocks path --lr-cpath")
-  local luarocks_cpath = handle_cpath:read("*a")
-  handle_cpath:close()
-
-  -- Add LuaRocks paths
-  if not string.find(package.path, luarocks_path, 1, true) then
-    package.path = package.path .. ";" .. luarocks_path
-  end
-
-  if not string.find(package.cpath, luarocks_cpath, 1, true) then
-    package.cpath = package.cpath .. ";" .. luarocks_cpath
-  end
-end
-
--- Function to check if LuaRocks is installed
-local function is_luarocks_installed()
-  local result = os.execute("luarocks --version > /dev/null 2>&1")
-  return result == 0
-end
-
--- Function to check and install luasocket if missing
-local function ensure_luasocket_installed()
+-- Notify the user if LuaSocket is not installed
+local function check_luasocket_installed()
   local ok, mime = pcall(require, "mime")
   if not ok then
-    -- Check if LuaRocks is installed
-    if not is_luarocks_installed() then
-      -- LuaRocks is not installed, notify the user
-      vim.notify(
-        "Hacker Helper Error: LuaRocks is not installed. Please install LuaRocks to use this feature.",
-        vim.log.levels.ERROR
-      )
-      vim.notify("Hacker Helper Error: sudo apt install luarocks", vim.log.levels.ERROR)
-      return false
-    end
-
-    -- Notify the user that we're installing LuaSocket
-    vim.notify("LuaSocket not found. Installing LuaSocket (luasocket) via LuaRocks...", vim.log.levels.INFO)
-
-    -- Run the LuaRocks install command
-    local result = os.execute("luarocks install luasocket")
-    if result == 0 then
-      -- Installation succeeded
-      vim.notify("LuaSocket successfully installed!", vim.log.levels.INFO)
-
-      -- Add LuaRocks paths dynamically
-      add_luarocks_path()
-
-      -- Reload mime module
-      local mime_ok, mime_new = pcall(require, "mime")
-      if not mime_ok then
-        vim.notify("Error: LuaSocket installed but mime module still not found.", vim.log.levels.ERROR)
-        return false
-      else
-        mime = mime_new
-      end
-    else
-      -- Installation failed, notify the user
-      vim.notify("Error: Failed to install LuaSocket. Please install it manually.", vim.log.levels.ERROR)
-      return false
-    end
+    vim.notify(
+      "Hacker Helper Error: LuaSocket (luasocket) is not installed. Please install it using LuaRocks: luarocks install luasocket",
+      vim.log.levels.ERROR
+    )
+    vim.notify("Hacker Helper Error: sudo apt install luarocks", vim.log.levels.ERROR)
+    return false
   end
   return true
 end
@@ -96,8 +40,8 @@ M.config = config
 -- you can also put some validation here for those.
 ---@param user_config Config? User-provided configuration
 M.setup = function(user_config)
-  -- Check if luasocket is installed, and attempt to install it if missing
-  if not ensure_luasocket_installed() then
+  -- Check if luasocket is installed
+  if not check_luasocket_installed() then
     return
   end
   -- Merge user configuration with defaults
@@ -109,6 +53,10 @@ M.setup = function(user_config)
   vim.keymap.set("n", M.config.prefix, function() end, { noremap = true, silent = true, desc = "Hacker Helper" })
   vim.keymap.set("v", M.config.prefix, function() end, { noremap = true, silent = true, desc = "Hacker Helper" })
 
+  -- Run command
+  vim.keymap.set("v", full_run_exec_mapping, function()
+    module.exec_line_or_selection_in_term()
+  end, { noremap = true, silent = true, desc = "Execute Command" })
   -- Register the group names for both encoding and decoding
   vim.keymap.set(
     "n",
@@ -120,84 +68,120 @@ M.setup = function(user_config)
     "n",
     M.config.prefix .. M.config.keys.decode_prefix,
     function() end,
-    { noremap = true, silent = true, desc = "Decode" }
+    { noremap = true, silent = true, desc = "Decoder" }
   )
 
   -- Encoding key mappings
   vim.keymap.set("v", M.config.prefix .. M.config.keys.encode_prefix .. M.config.keys.encode_url, function()
-    M.encode_selected_text("url")
+    M.transform_selected_text("url", "encode")
   end, { noremap = true, silent = true, desc = "URL Encode" })
   vim.keymap.set("v", M.config.prefix .. M.config.keys.encode_prefix .. M.config.keys.encode_base64, function()
-    M.encode_selected_text("base64")
+    M.transform_selected_text("base64", "encode")
   end, { noremap = true, silent = true, desc = "Base64 Encode" })
 
   -- Decoding key mappings
   vim.keymap.set("v", M.config.prefix .. M.config.keys.decode_prefix .. M.config.keys.decode_url, function()
-    M.decode_selected_text("url")
+    M.transform_selected_text("url", "decode")
   end, { noremap = true, silent = true, desc = "URL Decode" })
   vim.keymap.set("v", M.config.prefix .. M.config.keys.decode_prefix .. M.config.keys.decode_base64, function()
-    M.decode_selected_text("base64")
+    M.transform_selected_text("base64", "decode")
   end, { noremap = true, silent = true, desc = "Base64 Decode" })
-  -- Set key mappings using vim.keymap.set, including the description
-  vim.keymap.set("n", full_run_exec_mapping, function()
-    module.exec_line_or_selection_in_term()
-  end, { noremap = true, silent = true, desc = "Execute Command" })
-  vim.keymap.set("v", full_run_exec_mapping, function()
-    module.exec_line_or_selection_in_term()
-  end, { noremap = true, silent = true, desc = "Execute Command" })
 end
--- Function to handle encoding
-M.encode_selected_text = function(type)
-  local start_line = vim.fn.getpos("'<")[2]
-  local end_line = vim.fn.getpos("'>")[2]
-  local selection = vim.fn.getline(start_line, end_line)
+-- Function to handle encoding/decoding based on selection
+M.transform_selected_text = function(type, mode)
+  local start_pos = vim.fn.getpos("'<")
+  local end_pos = vim.fn.getpos("'>")
+  local start_line, start_col = start_pos[2], start_pos[3] - 1 -- Convert to 0-based index
+  local end_line, end_col = end_pos[2], end_pos[3] - 1 -- Convert to 0-based index
 
-  if type == "url" then
-    local encoded = vim.fn.escape(vim.fn.join(selection, "\n"), " ")
-    encoded = encoded:gsub("\n", ""):gsub(" ", "%%20"):gsub("([^%w%.%-_])", function(c)
-      return string.format("%%%02X", string.byte(c))
-    end)
-    -- If encoded has multiple lines, set them
-    local lines = vim.split(encoded, "\n")
-    if #lines == 1 then
-      vim.fn.setline(start_line, lines[1])
-    else
-      vim.fn.setline(start_line, lines)
+  -- Get selected lines
+  local lines = vim.fn.getline(start_line, end_line)
+
+  -- If no lines were selected, return early
+  if not lines or #lines == 0 then
+    vim.notify("No lines selected for transformation.", vim.log.levels.ERROR)
+    return
+  end
+
+  -- Handle full line selection
+  if start_col == 0 and end_col == -1 then
+    -- Full-line transformation
+    if type == "url" then
+      lines = M.transform_lines(lines, mode, "url")
+    elseif type == "base64" then
+      lines = M.transform_lines(lines, mode, "base64")
     end
-  elseif type == "base64" then
-    local encoded = mime.b64(vim.fn.join(selection, "\n"))
-    local lines = vim.split(encoded, "\n")
-    if #lines == 1 then
-      vim.fn.setline(start_line, lines[1])
+    -- Replace all selected lines with the transformed lines
+    vim.fn.setline(start_line, lines)
+  else
+    -- Handle partial selection within a single line
+    if lines and lines[1] then
+      local line = lines[1]
+
+      -- Ensure end_col doesn't exceed line length
+      local line_len = #line
+      end_col = math.min(end_col, line_len)
+
+      -- Get the selected portion
+      local selection = string.sub(line, start_col + 1, end_col)
+
+      -- If selection is nil or empty, return early
+      if not selection or selection == "" then
+        vim.notify("Invalid selection for transformation.", vim.log.levels.ERROR)
+        return
+      end
+
+      local transformed = ""
+
+      if type == "url" then
+        transformed = M.transform_text(selection, mode, "url")
+      elseif type == "base64" then
+        transformed = M.transform_text(selection, mode, "base64")
+      end
+
+      -- Use `vim.api.nvim_buf_set_text` to replace the selected part
+      local bufnr = vim.api.nvim_get_current_buf()
+      vim.api.nvim_buf_set_text(bufnr, start_line - 1, start_col, start_line - 1, end_col, { transformed })
+
+      -- Optionally move cursor if you want it to behave similarly to the `c` command
+      vim.api.nvim_win_set_cursor(0, { start_line, start_col + #transformed })
     else
-      vim.fn.setline(start_line, lines)
+      vim.notify("No valid line found for transformation.", vim.log.levels.ERROR)
     end
   end
 end
 
--- Function to handle decoding
-M.decode_selected_text = function(type)
-  local start_line = vim.fn.getpos("'<")[2]
-  local end_line = vim.fn.getpos("'>")[2]
-  local selection = vim.fn.getline(start_line, end_line)
+-- Function to transform lines for full-line selection
+M.transform_lines = function(lines, mode, type)
+  local transformed_lines = {}
+  for _, line in ipairs(lines) do
+    if type == "url" then
+      table.insert(transformed_lines, M.transform_text(line, mode, "url"))
+    elseif type == "base64" then
+      table.insert(transformed_lines, M.transform_text(line, mode, "base64"))
+    end
+  end
+  return transformed_lines
+end
 
+-- Function to transform individual text based on type and mode
+M.transform_text = function(text, mode, type)
+  local mime = require("mime")
   if type == "url" then
-    local decoded = vim.fn.join(selection, "\n"):gsub("%%(%x%x)", function(hex)
-      return string.char(tonumber(hex, 16))
-    end)
-    local lines = vim.split(decoded, "\n")
-    if #lines == 1 then
-      vim.fn.setline(start_line, lines[1])
-    else
-      vim.fn.setline(start_line, lines)
+    if mode == "encode" then
+      return text:gsub("([^%w%.%-_])", function(c)
+        return string.format("%%%02X", string.byte(c))
+      end)
+    else -- decode
+      return text:gsub("%%(%x%x)", function(hex)
+        return string.char(tonumber(hex, 16))
+      end)
     end
   elseif type == "base64" then
-    local decoded = mime.unb64(vim.fn.join(selection, "\n"))
-    local lines = vim.split(decoded, "\n")
-    if #lines == 1 then
-      vim.fn.setline(start_line, lines[1])
-    else
-      vim.fn.setline(start_line, lines)
+    if mode == "encode" then
+      return mime.b64(text)
+    else -- decode
+      return mime.unb64(text)
     end
   end
 end

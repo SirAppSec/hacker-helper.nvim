@@ -21,7 +21,7 @@ function M.exec_line_or_selection_in_term()
       size = 50,
     })
   else
-    print("toggleterm is not installed or cannot be loaded.")
+    vim.notify("Hacker Helper: toggleterm is not installed or cannot be loaded", vim.log.levels.WARN)
     return
   end
 
@@ -56,7 +56,7 @@ function M.exec_line_or_selection_in_term()
     -- Safely check if the terminal job ID exists
     local term_job_id = vim.b.terminal_job_id
     if not term_job_id then
-      print("No terminal job ID found.")
+      vim.notify("Hacker Helper: toggleterm job id couldn't be found", vim.log.levels.WARN)
       return
     end
 
@@ -68,7 +68,7 @@ function M.exec_line_or_selection_in_term()
     -- Switch back to the previous buffer
     vim.cmd("b#")
   else
-    print("No terminal buffer found.")
+    vim.notify("Hacker Helper: No terminal buffer found.", vim.log.levels.WARN)
   end
 end
 
