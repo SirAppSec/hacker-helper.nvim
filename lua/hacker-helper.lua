@@ -34,6 +34,10 @@ local config = {
     decode_url = "u", -- <leader>rdu (URL Decode)
     encode_base64 = "b", -- <leader>rdeb (Base64 Encode)
     decode_base64 = "b", -- <leader>rdb (Base64 Decode)
+    encode_html = "h", -- <leader>rdeh (HTML Encode)
+    decode_html = "h", -- <leader>rdh (HTML Decode)
+    encode_ascii_hex = "x", -- <leader>rdex (ASCII Hex Encode)
+    decode_ascii_hex = "x", -- <leader>rdx (ASCII Hex Decode)
   },
   opt = "Hello!",
 }
@@ -109,6 +113,33 @@ M.setup = function(user_config)
     end)
   end, { noremap = true, silent = true, desc = "URL Decode" })
 end
+-- HTML Encode
+vim.keymap.set("v", M.config.prefix .. M.config.keys.encode_prefix .. M.config.keys.encode_html, function()
+  selection_util.transform_selection(function(text, selection_type)
+    return M.transform_func(text, selection_type, "encode", "html")
+  end)
+end, { noremap = true, silent = true, desc = "HTML Encode" })
+
+-- HTML Decode
+vim.keymap.set("v", M.config.prefix .. M.config.keys.decode_prefix .. M.config.keys.decode_html, function()
+  selection_util.transform_selection(function(text, selection_type)
+    return M.transform_func(text, selection_type, "decode", "html")
+  end)
+end, { noremap = true, silent = true, desc = "HTML Decode" })
+
+-- ASCII Hex Encode
+vim.keymap.set("v", M.config.prefix .. M.config.keys.encode_prefix .. M.config.keys.encode_ascii_hex, function()
+  selection_util.transform_selection(function(text, selection_type)
+    return M.transform_func(text, selection_type, "encode", "ascii_hex")
+  end)
+end, { noremap = true, silent = true, desc = "ASCII Hex Encode" })
+
+-- ASCII Hex Decode
+vim.keymap.set("v", M.config.prefix .. M.config.keys.decode_prefix .. M.config.keys.decode_ascii_hex, function()
+  selection_util.transform_selection(function(text, selection_type)
+    return M.transform_func(text, selection_type, "decode", "ascii_hex")
+  end)
+end, { noremap = true, silent = true, desc = "ASCII Hex Decode" })
 -- Function to handle encoding/decoding based on selection
 -- Base64 encoding and decoding utility functions
 M.base64_encode = function(text)
@@ -132,6 +163,34 @@ M.url_decode = function(text)
   end)
 end
 
+-- HTML Encoding/Decoding Utility Functions
+M.html_encode = function(text)
+  return text:gsub("[<>&\"']", {
+    ["<"] = "&lt;",
+    [">"] = "&gt;",
+    ["&"] = "&amp;",
+    ['"'] = "&quot;",
+    ["'"] = "&#039;",
+  })
+end
+
+M.html_decode = function(text)
+  return text:gsub("&lt;", "<"):gsub("&gt;", ">"):gsub("&amp;", "&"):gsub("&quot;", '"'):gsub("&#039;", "'")
+end
+
+-- ASCII Hex Encoding/Decoding Utility Functions
+M.ascii_hex_encode = function(text)
+  return (text:gsub(".", function(c)
+    return string.format("\\x%02X", string.byte(c))
+  end))
+end
+
+M.ascii_hex_decode = function(text)
+  return (text:gsub("\\x(%x%x)", function(hex)
+    return string.char(tonumber(hex, 16))
+  end))
+end
+
 -- Transform function for encoding or decoding text based on type and selection type
 M.transform_func = function(text, selection_type, encode_or_decode, encoding_type)
   if encoding_type == "base64" then
@@ -145,6 +204,18 @@ M.transform_func = function(text, selection_type, encode_or_decode, encoding_typ
       return M.url_encode(text)
     elseif encode_or_decode == "decode" then
       return M.url_decode(text)
+    end
+  elseif encoding_type == "html" then
+    if encode_or_decode == "encode" then
+      return M.html_encode(text)
+    elseif encode_or_decode == "decode" then
+      return M.html_decode(text)
+    end
+  elseif encoding_type == "ascii_hex" then
+    if encode_or_decode == "encode" then
+      return M.ascii_hex_encode(text)
+    elseif encode_or_decode == "decode" then
+      return M.ascii_hex_decode(text)
     end
   end
   return text
