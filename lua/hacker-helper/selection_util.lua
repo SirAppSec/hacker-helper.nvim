@@ -2,10 +2,8 @@
 
 local M = {}
 
-M.transform_selection = function(transform_func, mode, encoding_type)
-  -- Default to "decode" if mode is not provided (backward compatibility)
-  mode = mode or "decode"
-
+-- Utility function to capture the visual selection, apply a transformation, and replace the selection
+M.transform_selection = function(transform_func, encode_or_decode, encoding_type)
   -- Reselect the current visual block to ensure the latest selection is active
   vim.cmd("normal! gv")
 
@@ -36,20 +34,16 @@ M.transform_selection = function(transform_func, mode, encoding_type)
     vim.notify("Full lines selected: " .. vim.inspect(lines), vim.log.levels.INFO)
     -- Apply transformation for full lines
     for i, line in ipairs(lines) do
-      lines[i] = transform_func(line, "full_line", mode, encoding_type)
+      lines[i] = transform_func(line, "full_line", encode_or_decode, encoding_type)
     end
-
-    -- If mode is "hash", insert the result above
-    if mode == "hash" then
-      vim.fn.append(start_line - 1, lines)
-    else
-      vim.fn.setline(start_line, lines) -- Default: Replace lines for encoding/decoding
-    end
+    -- Replace the selected lines with the transformed text
+    vim.fn.setline(start_line, lines)
   else
     -- Inline selection (v mode)
     if start_line == end_line then
       -- Handle inline selection on a single line
       local line = lines[1] or ""
+      -- Ensure start_col and end_col are valid
       start_col = math.max(0, start_col)
       end_col = math.min(#line, end_col)
 
@@ -58,17 +52,11 @@ M.transform_selection = function(transform_func, mode, encoding_type)
       vim.notify("Selected part of the line: " .. selection, vim.log.levels.INFO)
 
       -- Transform the selected part
-      local transformed = transform_func(selection or "", "specific_selection", mode, encoding_type)
+      local transformed = transform_func(selection or "", "specific_selection", encode_or_decode, encoding_type)
 
       -- Replace the selected part with the transformed text
       local new_line = string.sub(line, 1, start_col) .. transformed .. string.sub(line, end_col + 1)
-
-      -- If mode is "hash", insert the result above
-      if mode == "hash" then
-        vim.fn.append(start_line - 1, transformed)
-      else
-        vim.fn.setline(start_line, new_line)
-      end
+      vim.fn.setline(start_line, new_line)
     else
       -- Handle multi-line partial selection
       local first_line = string.sub(lines[1] or "", start_col + 1)
@@ -78,21 +66,17 @@ M.transform_selection = function(transform_func, mode, encoding_type)
 
       -- Transform first and last lines
       lines[1] = string.sub(lines[1] or "", 1, start_col)
-        .. transform_func(first_line, "multi_line", mode, encoding_type)
-      lines[#lines] = transform_func(last_line, "multi_line", mode, encoding_type)
+        .. transform_func(first_line, "multi_line", encode_or_decode, encoding_type)
+      lines[#lines] = transform_func(last_line, "multi_line", encode_or_decode, encoding_type)
         .. string.sub(lines[#lines] or "", end_col + 1)
 
       -- Transform middle lines
       for i = 2, #lines - 1 do
-        lines[i] = transform_func(lines[i], "multi_line", mode, encoding_type)
+        lines[i] = transform_func(lines[i], "multi_line", encode_or_decode, encoding_type)
       end
 
-      -- If mode is "hash", insert the result above
-      if mode == "hash" then
-        vim.fn.append(start_line - 1, lines)
-      else
-        vim.fn.setline(start_line, lines) -- Default: Replace lines for encoding/decoding
-      end
+      -- Replace the selected lines with the transformed text
+      vim.fn.setline(start_line, lines)
     end
   end
 

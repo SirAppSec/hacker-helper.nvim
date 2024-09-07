@@ -381,61 +381,50 @@ M.octal_decode = function(text)
 end
 
 M.transform_func = function(text, selection_type, encode_or_decode, encoding_type)
-  -- Helper function for invalid operation
-  local function invalid_operation()
-    vim.notify("Hacker Helper: Invalid operation for " .. encoding_type, vim.log.levels.ERROR)
-    return text
-  end
-
-  -- Encoding functions
-  if encode_or_decode == "encode" then
-    if encoding_type == "base64" then
+  if encoding_type == "base64" then
+    if encode_or_decode == "encode" then
       return M.base64_encode(text)
-    elseif encoding_type == "url" then
-      return M.url_encode(text)
-    elseif encoding_type == "html" then
-      return M.html_encode(text)
-    elseif encoding_type == "ascii_hex" then
-      return M.ascii_hex_encode(text)
-    elseif encoding_type == "gzip" then
-      return M.gzip_encode(text)
-    elseif encoding_type == "binary" then
-      return M.binary_encode(text)
-    elseif encoding_type == "octal" then
-      return M.octal_encode(text)
-    else
-      return invalid_operation()
-    end
-
-    -- Decoding functions
-  elseif encode_or_decode == "decode" then
-    if encoding_type == "base64" then
+    elseif encode_or_decode == "decode" then
       return M.base64_decode(text)
-    elseif encoding_type == "url" then
-      return M.url_decode(text)
-    elseif encoding_type == "html" then
-      return M.html_decode(text)
-    elseif encoding_type == "ascii_hex" then
-      return M.ascii_hex_decode(text)
-    elseif encoding_type == "gzip" then
-      return M.gzip_decode(text)
-    elseif encoding_type == "binary" then
-      return M.binary_decode(text)
-    elseif encoding_type == "octal" then
-      return M.octal_decode(text)
-    else
-      return invalid_operation()
     end
-
-    -- Hashing functions
-  elseif encode_or_decode == "hash" then
-    -- Use the M.hash_text function for hashing algorithms
-    return M.hash_text(text, encoding_type)
-
-    -- If an unsupported encode_or_decode operation is requested
-  else
-    return invalid_operation()
+  elseif encoding_type == "url" then
+    if encode_or_decode == "encode" then
+      return M.url_encode(text)
+    elseif encode_or_decode == "decode" then
+      return M.url_decode(text)
+    end
+  elseif encoding_type == "html" then
+    if encode_or_decode == "encode" then
+      return M.html_encode(text)
+    elseif encode_or_decode == "decode" then
+      return M.html_decode(text)
+    end
+  elseif encoding_type == "ascii_hex" then
+    if encode_or_decode == "encode" then
+      return M.ascii_hex_encode(text)
+    elseif encode_or_decode == "decode" then
+      return M.ascii_hex_decode(text)
+    end
+  elseif encoding_type == "gzip" then
+    if encode_or_decode == "encode" then
+      return M.gzip_encode(text)
+    elseif encode_or_decode == "decode" then
+      return M.gzip_decode(text)
+    end
+  elseif encoding_type == "binary" then
+    if encode_or_decode == "encode" then
+      return M.binary_encode(text)
+    elseif encode_or_decode == "decode" then
+      return M.binary_decode(text)
+    end
+  elseif encoding_type == "octal" then
+    if encode_or_decode == "encode" then
+      return M.octal_encode(text)
+    elseif encode_or_decode == "decode" then
+      return M.octal_decode(text)
+    end
   end
+  return text
 end
 
 M.hash_text = function(text, algorithm)
