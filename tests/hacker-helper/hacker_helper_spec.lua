@@ -130,4 +130,68 @@ describe("encoding/decoding", function()
     local decoded = plugin.transform_func(encoded_text, "specific_selection", "decode", "octal")
     assert.are.equal("Hello", decoded)
   end)
+
+  describe("Hashing Functions", function()
+    -- Test MD5 hashing
+    it("hashes text using MD5", function()
+      local text = "hello"
+      local hashed = plugin.hash_text(text, "md5")
+      assert.are.equal("5d41402abc4b2a76b9719d911017c592", hashed)
+    end)
+
+    -- Test SHA-1 hashing
+    it("hashes text using SHA-1", function()
+      local text = "hello"
+      local hashed = plugin.hash_text(text, "sha1")
+      assert.are.equal("aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d", hashed)
+    end)
+
+    -- Test SHA-256 hashing
+    it("hashes text using SHA-256", function()
+      local text = "hello"
+      local hashed = plugin.hash_text(text, "sha256")
+      assert.are.equal("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", hashed)
+    end)
+
+    -- Test CRC32 hashing
+    it("hashes text using CRC32", function()
+      local text = "hello"
+      local hashed = plugin.hash_text(text, "crc32")
+      assert.are.equal("3610a686", hashed)
+    end)
+
+    -- Test Scrypt hashing
+    it("hashes text using Scrypt", function()
+      local text = "hello"
+      local hashed = plugin.hash_text(text, "scrypt")
+      assert.are.equal(
+        "de9f496a91b7c783c46a1841f71b4500210adec570f4407fcb2975d8e97e7e747a35816a9988959a6c9d921bbc8b7ea9caa0059e154b732850da77db18497072",
+        hashed
+      )
+    end)
+    it("hashes test using Bcrypt", function()
+      local text = "hello"
+      local hashed = plugin.hash_text(text, "bcrypt")
+
+      -- Extract the salt and hashed part from the Bcrypt hash
+      local salt = string.sub(hashed, 8, 29) -- Salt is from positions 8 to 29 (22 characters)
+      local hashed_part = string.sub(hashed, 30, 60) -- Hashed part is from positions 30 to 60 (31 characters)
+
+      -- Verify Salt
+      assert.are.equal(22, #salt, "Salt length is incorrect")
+      for i = 1, #salt do
+        local char = string.sub(salt, i, i)
+        local is_valid = string.match(char, "[./A-Za-z0-9]")
+        assert.is_true(is_valid ~= nil, "Salt contains invalid characters at position " .. i .. ": " .. char)
+      end
+
+      -- Verify Hashed Part
+      assert.are.equal(31, #hashed_part, "Hashed part length is incorrect")
+      for i = 1, #hashed_part do
+        local char = string.sub(hashed_part, i, i)
+        local is_valid = string.match(char, "[./A-Za-z0-9]")
+        assert.is_true(is_valid ~= nil, "Hashed part contains invalid characters at position " .. i .. ": " .. char)
+      end
+    end)
+  end)
 end)
