@@ -270,23 +270,26 @@ M.ascii_hex_decode = function(text)
   end))
 end
 
+-- Gzip Encode function
 M.gzip_encode = function(text)
   local zlib = require("zlib")
-
-  local compressed = zlib.deflate()(text, "finish")
+  local deflate_stream = zlib.deflate()
+  local compressed, eof, bytes_in, bytes_out = deflate_stream(text, "finish")
   return compressed
 end
 
-M.gzip_decode = function(text)
+-- Gzip Decode function
+M.gzip_decode = function(compressed)
   local zlib = require("zlib")
-  local decompressed = zlib.inflate()(text, "finish")
+  local inflate_stream = zlib.inflate()
+  local decompressed, eof, bytes_in, bytes_out = inflate_stream(compressed)
   return decompressed
 end
 
-local bit = require("bit")
-
 -- Binary Encoding (compatible with LuaJIT using bit library)
 M.binary_encode = function(text)
+  local bit = require("bit")
+
   return (
     text:gsub(".", function(c)
       local byte = string.byte(c)
@@ -301,6 +304,8 @@ end
 
 -- Binary Decoding (compatible with LuaJIT using bit library)
 M.binary_decode = function(text)
+  local bit = require("bit")
+
   return (text:gsub("%d%d%d%d%d%d%d%d", function(bin)
     return string.char(tonumber(bin, 2))
   end))

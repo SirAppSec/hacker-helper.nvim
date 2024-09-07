@@ -9,10 +9,12 @@ A few Snippets to help hacking
 
 
 # Requirements
-Luarocks is required(luasocket mime for encoding decoding):
+Luarocks is required(luasocket mime,gzip,bit operations for encoding decoding):
 ```bash
 sudo apt install luarocks -y
 sudo luarocks install luasocket
+sudo luarocks install lua-zlib
+sudo luarocks install luabitop
 ```
 ## Using it
 
