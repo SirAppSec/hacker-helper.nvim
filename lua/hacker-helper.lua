@@ -233,44 +233,44 @@ end, { noremap = true, silent = true, desc = "Octal Decode" })
 
 -- MD5 Hash
 vim.keymap.set("v", M.config.prefix .. M.config.keys.hash_prefix .. M.config.keys.hash_md5, function()
-  selection_util.transform_selection(function(text)
+  selection_util.hash_selection(function(text)
     return M.hash_text(text, "md5")
-  end, "hash", "md5")
+  end) -- Passing "hash" as the mode and "md5" as the encoding type
 end, { noremap = true, silent = true, desc = "MD5 Hash" })
 
 -- SHA-1 Hash
 vim.keymap.set("v", M.config.prefix .. M.config.keys.hash_prefix .. M.config.keys.hash_sha1, function()
-  selection_util.transform_selection(function(text)
+  selection_util.hash_selection(function(text)
     return M.hash_text(text, "sha1")
-  end, "hash", "sha1")
+  end) -- Mode: "hash", Encoding: "sha1"
 end, { noremap = true, silent = true, desc = "SHA-1 Hash" })
 
 -- SHA-256 Hash
 vim.keymap.set("v", M.config.prefix .. M.config.keys.hash_prefix .. M.config.keys.hash_sha256, function()
-  selection_util.transform_selection(function(text)
+  selection_util.hash_selection(function(text)
     return M.hash_text(text, "sha256")
-  end, "hash", "sha256")
+  end) -- Mode: "hash", Encoding: "sha256"
 end, { noremap = true, silent = true, desc = "SHA-256 Hash" })
 
 -- CRC32 Hash
 vim.keymap.set("v", M.config.prefix .. M.config.keys.hash_prefix .. M.config.keys.hash_crc32, function()
-  selection_util.transform_selection(function(text)
+  selection_util.hash_selection(function(text)
     return M.hash_text(text, "crc32")
-  end, "hash", "crc32")
+  end) -- Mode: "hash", Encoding: "crc32"
 end, { noremap = true, silent = true, desc = "CRC32 Hash" })
 
 -- Bcrypt Hash
 vim.keymap.set("v", M.config.prefix .. M.config.keys.hash_prefix .. M.config.keys.hash_bcrypt, function()
-  selection_util.transform_selection(function(text)
+  selection_util.hash_selection(function(text)
     return M.hash_text(text, "bcrypt")
-  end, "hash", "bcrypt")
+  end) -- Mode: "hash", Encoding: "bcrypt"
 end, { noremap = true, silent = true, desc = "Bcrypt Hash" })
 
 -- Scrypt Hash
 vim.keymap.set("v", M.config.prefix .. M.config.keys.hash_prefix .. M.config.keys.hash_scrypt, function()
-  selection_util.transform_selection(function(text)
+  selection_util.hash_selection(function(text)
     return M.hash_text(text, "scrypt")
-  end, "hash", "scrypt")
+  end) -- Mode: "hash", Encoding: "scrypt"
 end, { noremap = true, silent = true, desc = "Scrypt Hash" })
 
 -- Function to handle encoding/decoding based on selection
