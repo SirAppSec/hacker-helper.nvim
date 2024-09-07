@@ -34,7 +34,13 @@ return {
         encode_html = "h",  -- <leader>rdeh (HTML Encode)
         decode_html = "h",  -- <leader>rdh (HTML Decode)
         encode_ascii_hex = "x",  -- <leader>rdex (ASCII Hex Encode)
-        decode_ascii_hex = "x",  -- <leader>rdx (ASCII Hex Decode)       decode_base64 = "b",  -- <leader>rdb (Base64 Decode)
+        decode_ascii_hex = "x",  -- <leader>rdx (ASCII Hex Decode)
+        encode_gzip = "g", -- <leader>rdeg (Gzip Encode)
+        decode_gzip = "g", -- <leader>rdg (Gzip Decode)
+        encode_binary = "i", -- <leader>rdei (Binary Encode)
+        decode_binary = "i", -- <leader>rdi (Binary Decode)
+        encode_octal = "o", -- <leader>rdeo (Octal Encode)
+        decode_octal = "o", -- <leader>rdo (Octal Decode)
       },
     },
   },
