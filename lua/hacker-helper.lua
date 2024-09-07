@@ -289,6 +289,7 @@ end
 -- Binary Encoding (compatible with LuaJIT using bit library)
 M.binary_encode = function(text)
   local bit = require("bit")
+
   return (
     text:gsub(".", function(c)
       local byte = string.byte(c)
@@ -304,6 +305,7 @@ end
 -- Binary Decoding (compatible with LuaJIT using bit library)
 M.binary_decode = function(text)
   local bit = require("bit")
+
   return (text:gsub("%d%d%d%d%d%d%d%d", function(bin)
     return string.char(tonumber(bin, 2))
   end))
