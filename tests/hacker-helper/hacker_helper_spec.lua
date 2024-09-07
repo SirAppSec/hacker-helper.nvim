@@ -90,4 +90,44 @@ describe("encoding/decoding", function()
     local decoded = plugin.transform_func(encoded_text, "specific_selection", "decode", "ascii_hex")
     assert.are.equal("Hello", decoded)
   end)
+
+  it("encodes Gzip correctly", function()
+    local text = "Hello, World!"
+    local encoded = plugin.transform_func(text, "specific_selection", "encode", "gzip")
+    -- Ensure it's encoded, actual result will vary based on zlib implementation
+    assert.is_not.equal(text, encoded)
+  end)
+
+  it("decodes Gzip correctly", function()
+    local text = "Hello, World!"
+    local encoded = plugin.transform_func(text, "specific_selection", "encode", "gzip")
+    local decoded = plugin.transform_func(encoded, "specific_selection", "decode", "gzip")
+    assert.are.equal(text, decoded)
+  end)
+
+  -- Test Binary encoding and decoding
+  it("encodes Binary correctly", function()
+    local text = "Hello"
+    local encoded = plugin.transform_func(text, "specific_selection", "encode", "binary")
+    assert.are.equal("0100100001100101011011000110110001101111", encoded)
+  end)
+
+  it("decodes Binary correctly", function()
+    local encoded_text = "0100100001100101011011000110110001101111"
+    local decoded = plugin.transform_func(encoded_text, "specific_selection", "decode", "binary")
+    assert.are.equal("Hello", decoded)
+  end)
+
+  -- Test Octal encoding and decoding
+  it("encodes Octal correctly", function()
+    local text = "Hello"
+    local encoded = plugin.transform_func(text, "specific_selection", "encode", "octal")
+    assert.are.equal("\\110\\145\\154\\154\\157", encoded)
+  end)
+
+  it("decodes Octal correctly", function()
+    local encoded_text = "\\110\\145\\154\\154\\157"
+    local decoded = plugin.transform_func(encoded_text, "specific_selection", "decode", "octal")
+    assert.are.equal("Hello", decoded)
+  end)
 end)
