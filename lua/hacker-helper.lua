@@ -54,9 +54,12 @@ local config = {
   prefix = "<leader>r", -- Default prefix for Hacker Helper
   keys = {
     run_exec = "e", -- Default mapping for executing in terminal
+
     encode_prefix = "de", -- <leader>rde (Encode Group)
     decode_prefix = "d", -- <leader>rd (Decode Group)
     encode_url = "u", -- <leader>rdeu (URL Encode)
+    hash_prefix = "c", -- <leader>rc (Hash Group)
+
     decode_url = "u", -- <leader>rdu (URL Decode)
     encode_base64 = "b", -- <leader>rdeb (Base64 Encode)
     decode_base64 = "b", -- <leader>rdb (Base64 Decode)
@@ -70,6 +73,12 @@ local config = {
     decode_binary = "i", -- <leader>rdi (Binary Decode)
     encode_octal = "o", -- <leader>rdeo (Octal Encode)
     decode_octal = "o", -- <leader>rdo (Octal Decode)
+    hash_md5 = "m", -- <leader>rcm (MD5 Hash)
+    hash_sha1 = "s", -- <leader>rcs (SHA-1 Hash)
+    hash_sha256 = "S", -- <leader>rcS (SHA-256 Hash)
+    hash_crc32 = "c", -- <leader>rcC (CRC32 Hash)
+    hash_scrypt = "y", -- <leader>rcy (Scrypt Hash)
+    hash_bcrypt = "b", -- <leader>rcb (Bcrypt Hash)
   },
   opt = "Hello!",
 }
@@ -116,6 +125,12 @@ M.setup = function(user_config)
     { noremap = true, silent = true, desc = "Decoder" }
   )
 
+  vim.keymap.set(
+    "v",
+    M.config.prefix .. M.config.keys.hash_prefix,
+    function() end,
+    { noremap = true, silent = true, desc = "Hash" }
+  )
   -- Key mappings for Base64 and URL encoding/decoding using config prefixes
 
   -- Base64 Encode
@@ -215,6 +230,48 @@ vim.keymap.set("v", M.config.prefix .. M.config.keys.decode_prefix .. M.config.k
     return M.transform_func(text, selection_type, "decode", "octal")
   end)
 end, { noremap = true, silent = true, desc = "Octal Decode" })
+
+-- MD5 Hash
+vim.keymap.set("v", M.config.prefix .. M.config.keys.hash_prefix .. M.config.keys.hash_md5, function()
+  selection_util.transform_selection(function(text)
+    return M.hash_text(text, "md5")
+  end, "hash", "md5")
+end, { noremap = true, silent = true, desc = "MD5 Hash" })
+
+-- SHA-1 Hash
+vim.keymap.set("v", M.config.prefix .. M.config.keys.hash_prefix .. M.config.keys.hash_sha1, function()
+  selection_util.transform_selection(function(text)
+    return M.hash_text(text, "sha1")
+  end, "hash", "sha1")
+end, { noremap = true, silent = true, desc = "SHA-1 Hash" })
+
+-- SHA-256 Hash
+vim.keymap.set("v", M.config.prefix .. M.config.keys.hash_prefix .. M.config.keys.hash_sha256, function()
+  selection_util.transform_selection(function(text)
+    return M.hash_text(text, "sha256")
+  end, "hash", "sha256")
+end, { noremap = true, silent = true, desc = "SHA-256 Hash" })
+
+-- CRC32 Hash
+vim.keymap.set("v", M.config.prefix .. M.config.keys.hash_prefix .. M.config.keys.hash_crc32, function()
+  selection_util.transform_selection(function(text)
+    return M.hash_text(text, "crc32")
+  end, "hash", "crc32")
+end, { noremap = true, silent = true, desc = "CRC32 Hash" })
+
+-- Bcrypt Hash
+vim.keymap.set("v", M.config.prefix .. M.config.keys.hash_prefix .. M.config.keys.hash_bcrypt, function()
+  selection_util.transform_selection(function(text)
+    return M.hash_text(text, "bcrypt")
+  end, "hash", "bcrypt")
+end, { noremap = true, silent = true, desc = "Bcrypt Hash" })
+
+-- Scrypt Hash
+vim.keymap.set("v", M.config.prefix .. M.config.keys.hash_prefix .. M.config.keys.hash_scrypt, function()
+  selection_util.transform_selection(function(text)
+    return M.hash_text(text, "scrypt")
+  end, "hash", "scrypt")
+end, { noremap = true, silent = true, desc = "Scrypt Hash" })
 
 -- Function to handle encoding/decoding based on selection
 -- Base64 encoding and decoding utility functions
@@ -323,52 +380,101 @@ M.octal_decode = function(text)
   end)
 end
 
--- Transform function for encoding or decoding text based on type and selection type
 M.transform_func = function(text, selection_type, encode_or_decode, encoding_type)
-  if encoding_type == "base64" then
-    if encode_or_decode == "encode" then
-      return M.base64_encode(text)
-    elseif encode_or_decode == "decode" then
-      return M.base64_decode(text)
-    end
-  elseif encoding_type == "url" then
-    if encode_or_decode == "encode" then
-      return M.url_encode(text)
-    elseif encode_or_decode == "decode" then
-      return M.url_decode(text)
-    end
-  elseif encoding_type == "html" then
-    if encode_or_decode == "encode" then
-      return M.html_encode(text)
-    elseif encode_or_decode == "decode" then
-      return M.html_decode(text)
-    end
-  elseif encoding_type == "ascii_hex" then
-    if encode_or_decode == "encode" then
-      return M.ascii_hex_encode(text)
-    elseif encode_or_decode == "decode" then
-      return M.ascii_hex_decode(text)
-    end
-  elseif encoding_type == "gzip" then
-    if encode_or_decode == "encode" then
-      return M.gzip_encode(text)
-    elseif encode_or_decode == "decode" then
-      return M.gzip_decode(text)
-    end
-  elseif encoding_type == "binary" then
-    if encode_or_decode == "encode" then
-      return M.binary_encode(text)
-    elseif encode_or_decode == "decode" then
-      return M.binary_decode(text)
-    end
-  elseif encoding_type == "octal" then
-    if encode_or_decode == "encode" then
-      return M.octal_encode(text)
-    elseif encode_or_decode == "decode" then
-      return M.octal_decode(text)
-    end
+  -- Helper function for invalid operation
+  local function invalid_operation()
+    vim.notify("Hacker Helper: Invalid operation for " .. encoding_type, vim.log.levels.ERROR)
+    return text
   end
-  return text
+
+  -- Encoding functions
+  if encode_or_decode == "encode" then
+    if encoding_type == "base64" then
+      return M.base64_encode(text)
+    elseif encoding_type == "url" then
+      return M.url_encode(text)
+    elseif encoding_type == "html" then
+      return M.html_encode(text)
+    elseif encoding_type == "ascii_hex" then
+      return M.ascii_hex_encode(text)
+    elseif encoding_type == "gzip" then
+      return M.gzip_encode(text)
+    elseif encoding_type == "binary" then
+      return M.binary_encode(text)
+    elseif encoding_type == "octal" then
+      return M.octal_encode(text)
+    else
+      return invalid_operation()
+    end
+
+    -- Decoding functions
+  elseif encode_or_decode == "decode" then
+    if encoding_type == "base64" then
+      return M.base64_decode(text)
+    elseif encoding_type == "url" then
+      return M.url_decode(text)
+    elseif encoding_type == "html" then
+      return M.html_decode(text)
+    elseif encoding_type == "ascii_hex" then
+      return M.ascii_hex_decode(text)
+    elseif encoding_type == "gzip" then
+      return M.gzip_decode(text)
+    elseif encoding_type == "binary" then
+      return M.binary_decode(text)
+    elseif encoding_type == "octal" then
+      return M.octal_decode(text)
+    else
+      return invalid_operation()
+    end
+
+    -- Hashing functions
+  elseif encode_or_decode == "hash" then
+    -- Use the M.hash_text function for hashing algorithms
+    return M.hash_text(text, encoding_type)
+
+    -- If an unsupported encode_or_decode operation is requested
+  else
+    return invalid_operation()
+  end
+end
+
+M.hash_text = function(text, algorithm)
+  local python_cmd = ""
+
+  -- Define Python commands for each hashing algorithm
+  if algorithm == "md5" then
+    python_cmd = string.format("python3 -c 'import hashlib; print(hashlib.md5(\"%s\".encode()).hexdigest())'", text)
+  elseif algorithm == "sha1" then
+    python_cmd = string.format("python3 -c 'import hashlib; print(hashlib.sha1(\"%s\".encode()).hexdigest())'", text)
+  elseif algorithm == "sha256" then
+    python_cmd = string.format("python3 -c 'import hashlib; print(hashlib.sha256(\"%s\".encode()).hexdigest())'", text)
+  elseif algorithm == "bcrypt" then
+    python_cmd = string.format(
+      "python3 -c 'import bcrypt; print(bcrypt.hashpw(\"%s\".encode(), bcrypt.gensalt()).decode())'",
+      text
+    )
+  elseif algorithm == "crc32" then
+    python_cmd =
+      string.format('python3 -c \'import binascii; print(format(binascii.crc32(b"%s") & 0xffffffff, "08x"))\'', text)
+  elseif algorithm == "scrypt" then
+    python_cmd = string.format(
+      'python3 -c \'import hashlib; print(hashlib.scrypt("%s".encode(), salt=b"", n=16384, r=8, p=1, dklen=64).hex())\'',
+      text
+    )
+  else
+    vim.notify("Hacker Helper: unsupported algorithm " .. algorithm, vim.log.levels.ERROR)
+  end
+
+  -- Execute the Python command and capture the output
+  local handle = io.popen(python_cmd)
+  if handle then
+    local result = handle:read("*a")
+    handle:close()
+    -- Remove trailing newlines from the result
+    return result:gsub("%s+", "")
+  else
+    vim.notify("Hacker Helper: Python dependencies for hashing are missing", vim.log.levels.ERROR)
+  end
 end
 
 M.hello = function()
