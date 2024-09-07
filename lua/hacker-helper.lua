@@ -3,24 +3,50 @@ local selection_util = require("hacker-helper.selection_util")
 
 -- main module file
 local module = require("hacker-helper.module")
-
--- Notify the user if LuaSocket is not installed
-local function check_luasocket_installed()
-  local ok, mime = pcall(require, "mime")
+-- Generalized function to check if a Lua module is installed
+local function check_dependency(module_name, package_name)
+  local ok, sub_module = pcall(require, module_name)
   if not ok then
     vim.notify(
-      "Hacker Helper Error: LuaSocket (luasocket) is not installed. Please install it using LuaRocks: luarocks install luasocket",
+      string.format(
+        "Hacker Helper Error: %s (%s) is not installed. Please install it using LuaRocks: luarocks install %s",
+        module_name,
+        package_name,
+        package_name
+      ),
       vim.log.levels.ERROR
     )
     vim.notify(
-      "Hacker Helper Error: sudo apt install luarocks && sudo luarocks install luasocket",
+      string.format("Hacker Helper Error: sudo apt install luarocks && sudo luarocks install %s", package_name),
       vim.log.levels.ERROR
     )
     return nil
   end
-  return mime
+  return sub_module
 end
+local function check_dependencies()
+  local mime = check_dependency("mime", "luasocket")
+  if not mime then
+    return nil
+  end
 
+  local zlib = check_dependency("zlib", "lua-zlib")
+  if not zlib then
+    return nil
+  end
+
+  local bit = check_dependency("bit", "luabitop")
+  if not zlib then
+    return nil
+  end
+
+  -- Return both dependencies if available
+  return {
+    mime = mime,
+    zlib = zlib,
+    bit = bit,
+  }
+end
 ---@class Config
 ---@field opt string Your config option
 ---@field keys table<string, string> Key mappings
@@ -38,14 +64,21 @@ local config = {
     decode_html = "h", -- <leader>rdh (HTML Decode)
     encode_ascii_hex = "x", -- <leader>rdex (ASCII Hex Encode)
     decode_ascii_hex = "x", -- <leader>rdx (ASCII Hex Decode)
+    encode_gzip = "g", -- <leader>rdeg (Gzip Encode)
+    decode_gzip = "g", -- <leader>rdg (Gzip Decode)
+    encode_binary = "i", -- <leader>rdei (Binary Encode)
+    decode_binary = "i", -- <leader>rdi (Binary Decode)
+    encode_octal = "o", -- <leader>rdeo (Octal Encode)
+    decode_octal = "o", -- <leader>rdo (Octal Decode)
   },
   opt = "Hello!",
 }
 
-local mime = check_luasocket_installed()
-if not mime then
+-- Call this function before plugin setup to ensure all dependencies are installed
+local deps = check_dependencies()
+if not deps then
   return
-end -- Ensure LuaSocket is installed
+end
 ---@class MyModule
 local M = {}
 ---@type Config
@@ -140,13 +173,59 @@ vim.keymap.set("v", M.config.prefix .. M.config.keys.decode_prefix .. M.config.k
     return M.transform_func(text, selection_type, "decode", "ascii_hex")
   end)
 end, { noremap = true, silent = true, desc = "ASCII Hex Decode" })
+
+-- Gzip Encode
+vim.keymap.set("v", M.config.prefix .. M.config.keys.encode_prefix .. M.config.keys.encode_gzip, function()
+  selection_util.transform_selection(function(text, selection_type)
+    return M.transform_func(text, selection_type, "encode", "gzip")
+  end)
+end, { noremap = true, silent = true, desc = "Gzip Encode" })
+
+-- Gzip Decode
+vim.keymap.set("v", M.config.prefix .. M.config.keys.decode_prefix .. M.config.keys.decode_gzip, function()
+  selection_util.transform_selection(function(text, selection_type)
+    return M.transform_func(text, selection_type, "decode", "gzip")
+  end)
+end, { noremap = true, silent = true, desc = "Gzip Decode" })
+
+-- Binary Encode
+vim.keymap.set("v", M.config.prefix .. M.config.keys.encode_prefix .. M.config.keys.encode_binary, function()
+  selection_util.transform_selection(function(text, selection_type)
+    return M.transform_func(text, selection_type, "encode", "binary")
+  end)
+end, { noremap = true, silent = true, desc = "Binary Encode" })
+
+-- Binary Decode
+vim.keymap.set("v", M.config.prefix .. M.config.keys.decode_prefix .. M.config.keys.decode_binary, function()
+  selection_util.transform_selection(function(text, selection_type)
+    return M.transform_func(text, selection_type, "decode", "binary")
+  end)
+end, { noremap = true, silent = true, desc = "Binary Decode" })
+
+-- Octal Encode
+vim.keymap.set("v", M.config.prefix .. M.config.keys.encode_prefix .. M.config.keys.encode_octal, function()
+  selection_util.transform_selection(function(text, selection_type)
+    return M.transform_func(text, selection_type, "encode", "octal")
+  end)
+end, { noremap = true, silent = true, desc = "Octal Encode" })
+
+-- Octal Decode
+vim.keymap.set("v", M.config.prefix .. M.config.keys.decode_prefix .. M.config.keys.decode_octal, function()
+  selection_util.transform_selection(function(text, selection_type)
+    return M.transform_func(text, selection_type, "decode", "octal")
+  end)
+end, { noremap = true, silent = true, desc = "Octal Decode" })
+
 -- Function to handle encoding/decoding based on selection
 -- Base64 encoding and decoding utility functions
 M.base64_encode = function(text)
+  local mime = require("mime")
+
   return mime.b64(text)
 end
 
 M.base64_decode = function(text)
+  local mime = require("mime")
   return mime.unb64(text)
 end
 
@@ -191,6 +270,57 @@ M.ascii_hex_decode = function(text)
   end))
 end
 
+-- Gzip Encode function
+M.gzip_encode = function(text)
+  local zlib = require("zlib")
+  local deflate_stream = zlib.deflate()
+  local compressed, eof, bytes_in, bytes_out = deflate_stream(text, "finish")
+  return compressed
+end
+
+-- Gzip Decode function
+M.gzip_decode = function(compressed)
+  local zlib = require("zlib")
+  local inflate_stream = zlib.inflate()
+  local decompressed, eof, bytes_in, bytes_out = inflate_stream(compressed)
+  return decompressed
+end
+
+-- Binary Encoding (compatible with LuaJIT using bit library)
+M.binary_encode = function(text)
+  local bit = require("bit")
+  return (
+    text:gsub(".", function(c)
+      local byte = string.byte(c)
+      local binary = ""
+      for i = 7, 0, -1 do
+        binary = binary .. bit.band(bit.rshift(byte, i), 1) -- Using bit.rshift and bit.band
+      end
+      return binary
+    end)
+  )
+end
+
+-- Binary Decoding (compatible with LuaJIT using bit library)
+M.binary_decode = function(text)
+  local bit = require("bit")
+  return (text:gsub("%d%d%d%d%d%d%d%d", function(bin)
+    return string.char(tonumber(bin, 2))
+  end))
+end
+
+M.octal_encode = function(text)
+  return text:gsub(".", function(char)
+    return string.format("\\%03o", string.byte(char))
+  end)
+end
+
+M.octal_decode = function(text)
+  return text:gsub("\\(%d%d%d)", function(octal)
+    return string.char(tonumber(octal, 8))
+  end)
+end
+
 -- Transform function for encoding or decoding text based on type and selection type
 M.transform_func = function(text, selection_type, encode_or_decode, encoding_type)
   if encoding_type == "base64" then
@@ -216,6 +346,24 @@ M.transform_func = function(text, selection_type, encode_or_decode, encoding_typ
       return M.ascii_hex_encode(text)
     elseif encode_or_decode == "decode" then
       return M.ascii_hex_decode(text)
+    end
+  elseif encoding_type == "gzip" then
+    if encode_or_decode == "encode" then
+      return M.gzip_encode(text)
+    elseif encode_or_decode == "decode" then
+      return M.gzip_decode(text)
+    end
+  elseif encoding_type == "binary" then
+    if encode_or_decode == "encode" then
+      return M.binary_encode(text)
+    elseif encode_or_decode == "decode" then
+      return M.binary_decode(text)
+    end
+  elseif encoding_type == "octal" then
+    if encode_or_decode == "encode" then
+      return M.octal_encode(text)
+    elseif encode_or_decode == "decode" then
+      return M.octal_decode(text)
     end
   end
   return text

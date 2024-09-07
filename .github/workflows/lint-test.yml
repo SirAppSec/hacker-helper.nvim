@@ -37,6 +37,7 @@ jobs:
       - name: Install LuaSocket
         run: |
           sudo luarocks install luasocket
+          sudo luarocks install lua-zlib
 
       - name: run tests
         run: make test
