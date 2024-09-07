@@ -28,6 +28,10 @@ Luarocks is required(luasocket mime,gzip,bit operations for encoding decoding):
     sudo luarocks install luasocket
     sudo luarocks install lua-zlib
     sudo luarocks install luabitop
+    sudo luarocks install bcrypt
+    sudo pip install bcrypt argon2-cffi
+    sudo apt-get install libssl-dev
+    sudo luarocks install luacrypto
 <
 
 
@@ -42,21 +46,31 @@ USING IT                            *hacker-helper-docs-requirements-using-it*
           prefix = "<leader>r", -- Change base prefix to <leader>r
           keys = {
             run_exec = "e", -- <leader>re (Execute Command in Terminal)
+    
             encode_prefix = "de", -- <leader>rde (Encode Group)
-            decode_prefix = "d",  -- <leader>rd (Decode Group)
-            encode_url = "u",     -- <leader>rdeu (URL Encode)
-            decode_url = "u",     -- <leader>rdu (URL Decode)
-            encode_base64 = "b",  -- <leader>rdeb (Base64 Encode)
-            encode_html = "h",  -- <leader>rdeh (HTML Encode)
-            decode_html = "h",  -- <leader>rdh (HTML Decode)
-            encode_ascii_hex = "x",  -- <leader>rdex (ASCII Hex Encode)
-            decode_ascii_hex = "x",  -- <leader>rdx (ASCII Hex Decode)
+            decode_prefix = "d", -- <leader>rd (Decode Group)
+            encode_url = "u", -- <leader>rdeu (URL Encode)
+            hash_prefix = "c", -- <leader>rc (Hash Group)
+    
+            decode_url = "u", -- <leader>rdu (URL Decode)
+            encode_base64 = "b", -- <leader>rdeb (Base64 Encode)
+            decode_base64 = "b", -- <leader>rdb (Base64 Decode)
+            encode_html = "h", -- <leader>rdeh (HTML Encode)
+            decode_html = "h", -- <leader>rdh (HTML Decode)
+            encode_ascii_hex = "x", -- <leader>rdex (ASCII Hex Encode)
+            decode_ascii_hex = "x", -- <leader>rdx (ASCII Hex Decode)
             encode_gzip = "g", -- <leader>rdeg (Gzip Encode)
             decode_gzip = "g", -- <leader>rdg (Gzip Decode)
             encode_binary = "i", -- <leader>rdei (Binary Encode)
             decode_binary = "i", -- <leader>rdi (Binary Decode)
             encode_octal = "o", -- <leader>rdeo (Octal Encode)
             decode_octal = "o", -- <leader>rdo (Octal Decode)
+            hash_md5 = "m", -- <leader>rcm (MD5 Hash)
+            hash_sha1 = "s", -- <leader>rcs (SHA-1 Hash)
+            hash_sha256 = "S", -- <leader>rcS (SHA-256 Hash)
+            hash_crc32 = "c", -- <leader>rcC (CRC32 Hash)
+            hash_scrypt = "y", -- <leader>rcy (Scrypt Hash)
+            hash_bcrypt = "b", -- <leader>rcb (Bcrypt Hash)
           },
         },
       },
