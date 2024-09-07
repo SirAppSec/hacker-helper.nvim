@@ -15,10 +15,7 @@ sudo apt install luarocks -y
 sudo luarocks install luasocket
 sudo luarocks install lua-zlib
 sudo luarocks install luabitop
-sudo luarocks install bcrypt
-sudo pip install bcrypt argon2-cffi
-sudo apt-get install libssl-dev
-sudo luarocks install luacrypto
+sudo pip install bcrypt
 
 ```
 ## Using it
