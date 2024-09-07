@@ -227,9 +227,9 @@ end, { noremap = true, silent = true, desc = "Octal Decode" })
 
 -- MD5 Hash
 vim.keymap.set("v", M.config.prefix .. M.config.keys.hash_prefix .. M.config.keys.hash_md5, function()
-  M.transform_selection(function(text)
+  selection_util.hash_selection(function(text)
     return M.hash_text(text, "md5")
-  end, "hash", "md5") -- Passing "hash" as the mode and "md5" as the encoding type
+  end) -- Passing "hash" as the mode and "md5" as the encoding type
 end, { noremap = true, silent = true, desc = "MD5 Hash" })
 
 -- SHA-1 Hash
