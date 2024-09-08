@@ -286,11 +286,13 @@ vim.keymap.set("v", M.config.prefix .. M.config.keys.hash_prefix .. M.config.key
 end, { noremap = true, silent = true, desc = "Scrypt Hash" })
 
 -- Scripts/snippets are under <leader>rs
+
+-- HTTP Burp to Python Requests (body)
 vim.keymap.set(
   "v",
   M.config.prefix .. M.config.keys.scripts_prefix .. M.config.keys.script_http_to_python_body,
   function()
-    selection_util.transform_selection(function(selection)
+    http_to_python.capture_http_selection(function(selection)
       local request = http_to_python.parse_http_request(selection)
       return http_to_python.generate_python_requests_script(request, "raw")
     end)
@@ -298,11 +300,12 @@ vim.keymap.set(
   { noremap = true, silent = true, desc = "HTTP Burp to Python Requests (body)" }
 )
 
+-- HTTP Burp to Python Requests (json)
 vim.keymap.set(
   "v",
   M.config.prefix .. M.config.keys.scripts_prefix .. M.config.keys.script_http_to_python_json,
   function()
-    selection_util.transform_selection(function(selection)
+    http_to_python.capture_http_selection(function(selection)
       local request = http_to_python.parse_http_request(selection)
       return http_to_python.generate_python_requests_script(request, "json")
     end)
@@ -310,11 +313,12 @@ vim.keymap.set(
   { noremap = true, silent = true, desc = "HTTP Burp to Python Requests (json)" }
 )
 
+-- HTTP Burp to Python Requests (form-data)
 vim.keymap.set(
   "v",
   M.config.prefix .. M.config.keys.scripts_prefix .. M.config.keys.script_http_to_python_form,
   function()
-    selection_util.transform_selection(function(selection)
+    http_to_python.capture_http_selection(function(selection)
       local request = http_to_python.parse_http_request(selection)
       return http_to_python.generate_python_requests_script(request, "form-data")
     end)

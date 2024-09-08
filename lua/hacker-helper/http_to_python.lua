@@ -28,8 +28,9 @@ M.convert_to_form_data = function(body)
 
   return table.concat(encoded_data, "&")
 end
--- Custom function to capture the visual selection for HTTP to Python conversion
-M.capture_http_selection = function()
+
+-- Custom function to capture the visual selection for HTTP to Python conversion and replace the selected lines
+M.capture_http_selection = function(transform_func)
   -- Reselect the current visual block to ensure the latest selection is active
   vim.cmd("normal! gv")
 
@@ -47,7 +48,19 @@ M.capture_http_selection = function()
     selection[i] = line:gsub("\r$", "") -- Handle ^M
   end
 
-  return selection
+  -- Apply the transform function to the selection (HTTP to Python)
+  local transformed = transform_func(selection)
+
+  -- Split the transformed string into individual lines
+  local transformed_lines = vim.split(transformed, "\n")
+
+  -- Replace the selected lines with the transformed Python script
+  vim.fn.setline(start_line, transformed_lines)
+
+  -- If more lines were selected than the transformed output, delete extra lines
+  if end_line > start_line + #transformed_lines - 1 then
+    vim.fn.deletebufline("%", start_line + #transformed_lines, end_line)
+  end
 end
 
 -- Function to parse the HTTP request from the selected lines
