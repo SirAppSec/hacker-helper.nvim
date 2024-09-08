@@ -59,6 +59,7 @@ local config = {
     decode_prefix = "d", -- <leader>rd (Decode Group)
     encode_url = "u", -- <leader>rdeu (URL Encode)
     hash_prefix = "c", -- <leader>rc (Hash Group)
+    scripts_prefix = "s",
 
     decode_url = "u", -- <leader>rdu (URL Decode)
     encode_base64 = "b", -- <leader>rdeb (Base64 Encode)
@@ -79,6 +80,10 @@ local config = {
     hash_crc32 = "c", -- <leader>rcC (CRC32 Hash)
     hash_scrypt = "y", -- <leader>rcy (Scrypt Hash)
     hash_bcrypt = "b", -- <leader>rcb (Bcrypt Hash)
+
+    script_http_to_python_form = "f",
+    script_http_to_python_json = "j",
+    script_http_to_python_body = "s",
   },
   opt = "Hello!",
 }
@@ -130,6 +135,12 @@ M.setup = function(user_config)
     M.config.prefix .. M.config.keys.hash_prefix,
     function() end,
     { noremap = true, silent = true, desc = "Hash" }
+  )
+  vim.keymap.set(
+    "v",
+    M.config.prefix .. M.config.keys.scripts_prefix,
+    function() end,
+    { noremap = true, silent = true, desc = "Scripts/Snippets" }
   )
   -- Key mappings for Base64 and URL encoding/decoding using config prefixes
 
