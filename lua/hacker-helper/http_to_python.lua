@@ -1,23 +1,45 @@
 local M = {}
 
--- Utility function to convert URL-encoded form-data into a dictionary-like structure
+-- Utility function to convert request body to dictionary format (if applicable)
+-- Utility function to convert URL-encoded form-data into a Python dictionary format
 M.convert_to_dict = function(body)
   local dict_body = {}
 
+  -- For each key-value pair in the form-data
   for line in body:gmatch("[^&]+") do
     local key, value = line:match("([^=]+)=([^=]+)")
     if key and value then
       -- Decode URL-encoded keys and values
-      key = vim.fn.system("python3 -c 'import urllib.parse; print(urllib.parse.unquote(\"" .. key .. "\"))'")
-      value = vim.fn.system("python3 -c 'import urllib.parse; print(urllib.parse.unquote(\"" .. value .. "\"))'")
-      dict_body[key:gsub("%s+$", "")] = value:gsub("%s+$", "") -- Trim newlines added by Python's system call
+      key = vim.fn.system("python3 -c 'import urllib.parse; print(urllib.parse.unquote(\"" .. key .. '"), end="")\'')
+      value =
+        vim.fn.system("python3 -c 'import urllib.parse; print(urllib.parse.unquote(\"" .. value .. '"), end="")\'')
+
+      -- Remove trailing newlines from python output
+      key = key:gsub("%s+$", "")
+      value = value:gsub("%s+$", "")
+
+      -- Insert the key-value pair into the dictionary, using Python dictionary format
+      table.insert(dict_body, string.format('"%s": "%s"', key, value))
     else
       -- If it can't be parsed, return as raw string
       return nil
     end
   end
 
-  return dict_body
+  -- Join the key-value pairs as a proper Python dictionary string
+  return "{ " .. table.concat(dict_body, ", ") .. " }"
+end
+
+-- Utility function to URL-encode form-data
+M.convert_to_form_data = function(body)
+  local encoded_data = {}
+
+  -- Assuming body is already in a dictionary-like structure
+  for key, value in pairs(body) do
+    table.insert(encoded_data, string.format("%s=%s", key, value))
+  end
+
+  return table.concat(encoded_data, "&")
 end
 
 -- Custom function to capture the visual selection for HTTP to Python conversion and replace the selected lines
@@ -83,9 +105,6 @@ M.parse_http_request = function(selection)
             request.cookies[name:gsub("^%s+", "")] = val -- Trim leading spaces
           end
         end
-      elseif key:lower() == "host" then
-        -- Handle the Host header as part of the URL
-        request.url = string.format("http://%s%s", value, request.url)
       else
         request.headers[key] = value
       end
@@ -101,13 +120,13 @@ M.parse_http_request = function(selection)
   return request
 end
 
--- Example function to convert the parsed HTTP request to Python requests code
+-- Function to convert the parsed HTTP request to Python requests code
 M.generate_python_requests_script = function(request, body_type)
   -- Construct base Python script
   local python_code = "import requests\n\n"
   python_code = python_code .. string.format('url = "%s"\n', request.url)
 
-  -- Handle headers (excluding the Host header)
+  -- Handle headers
   python_code = python_code .. "headers = {\n"
   for key, value in pairs(request.headers) do
     python_code = python_code .. string.format('    "%s": "%s",\n', key, value)
