@@ -1,32 +1,32 @@
 local M = {}
-
--- Utility function to convert request body to dictionary format (if applicable)
 -- Utility function to convert URL-encoded form-data into a Python dictionary format
+local url_decode = function(str)
+  -- Decodes URL-encoded string using Python's urllib to ensure compatibility
+  local command = string.format('python3 -c \'import urllib.parse; print(urllib.parse.unquote("%s"), end="")\'', str)
+  local decoded = vim.fn.system(command)
+  return decoded:gsub("%s+$", "") -- Remove trailing newlines or spaces
+end
+
 M.convert_to_dict = function(body)
   local dict_body = {}
 
-  -- For each key-value pair in the form-data
+  -- Parse form-data, expecting URL-encoded key-value pairs (e.g., key=value&key1=value1)
   for line in body:gmatch("[^&]+") do
     local key, value = line:match("([^=]+)=([^=]+)")
     if key and value then
-      -- Decode URL-encoded keys and values
-      key = vim.fn.system("python3 -c 'import urllib.parse; print(urllib.parse.unquote(\"" .. key .. '"), end="")\'')
-      value =
-        vim.fn.system("python3 -c 'import urllib.parse; print(urllib.parse.unquote(\"" .. value .. '"), end="")\'')
+      -- Decode URL-encoded keys and values using the Python helper
+      key = url_decode(key)
+      value = url_decode(value)
 
-      -- Remove trailing newlines from python output
-      key = key:gsub("%s+$", "")
-      value = value:gsub("%s+$", "")
-
-      -- Insert the key-value pair into the dictionary, using Python dictionary format
+      -- Format as a Python dictionary key-value pair
       table.insert(dict_body, string.format('"%s": "%s"', key, value))
     else
-      -- If it can't be parsed, return as raw string
+      -- Return nil if the body can't be parsed as key-value pairs
       return nil
     end
   end
 
-  -- Join the key-value pairs as a proper Python dictionary string
+  -- Join the key-value pairs into a proper Python dictionary string
   return "{ " .. table.concat(dict_body, ", ") .. " }"
 end
 
@@ -122,6 +122,16 @@ end
 
 -- Function to convert the parsed HTTP request to Python requests code
 M.generate_python_requests_script = function(request, body_type)
+  -- Print the request and body_type for debugging purposes
+  print("Request passed in: ", vim.inspect(request))
+  print("Body type: ", body_type)
+
+  -- Ensure the request has valid data before proceeding
+  if not request or not request.method or not request.url then
+    print("Invalid request data")
+    return nil
+  end
+
   -- Construct base Python script
   local python_code = "import requests\n\n"
   python_code = python_code .. string.format('url = "%s"\n', request.url)
@@ -156,15 +166,19 @@ M.generate_python_requests_script = function(request, body_type)
         request.body
       )
   elseif body_type == "json" then
-    python_code = python_code .. string.format("json_body = %s\n", request.body) -- Make sure this is valid JSON
+    python_code = python_code .. string.format("json_body = %s\n", request.body)
     python_code = python_code
       .. string.format(
         "response = requests.%s(url, headers=headers, cookies=cookies, json=json_body)\n",
         request.method:lower()
       )
   elseif body_type == "form-data" then
-    local decoded_body = M.convert_to_dict(request.body)
-    python_code = python_code .. string.format("form_data = %s\n", vim.inspect(decoded_body))
+    -- Convert the form body to a dictionary (parsed form data)
+    local form_data = M.convert_to_dict(request.body)
+    if not form_data or vim.tbl_isempty(form_data) then
+      return "{}" -- Return empty dictionary if form-data parsing fails
+    end
+    python_code = python_code .. "form_data = " .. vim.inspect(form_data) .. "\n"
     python_code = python_code
       .. string.format(
         "response = requests.%s(url, headers=headers, cookies=cookies, data=form_data)\n",

@@ -61,4 +61,10 @@ return {
 }
 ```
 
-
+## RoadMap
+1. fix issues with selection
+2. add some tests for selection(difficult borderline-unnecessary)
+3. Add scrape for advanced xss
+4. use python HTTP.server on current folder/path `python3 -m http.server -d /path/to/web/dir`
+5. host a simple attack server to serve XMLHttpRequests
+6. paste polygloats/payloads/reverseshells `https://github.com/0xsobky/HackVault/wiki/Unleashing-an-Ultimate-XSS-Polyglot`

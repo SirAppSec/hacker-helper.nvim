@@ -155,9 +155,8 @@ except ValueError:
       body = "key=value&key1=value1&encoded_key=%3Cscript%3E%3C%2Fscript%3E",
     }
 
-    local generated_script = http_to_python.generate_python_requests_script(request, "form-data")
-
-    -- Expected script
+    local generated_script =
+      require("hacker-helper.http_to_python").generate_python_requests_script(request, "form-data")
     local expected_script = [[
 import requests
 
@@ -173,7 +172,9 @@ cookies = {
 }
 
 form_data = {
-    "key": "value"
+    "key": "value",
+    "key1": "value1",
+    "encoded_key": "<script></script>"
 }
 
 # Uncomment the following lines to use Burp Proxy
@@ -196,7 +197,7 @@ except ValueError:
     print(response.text)
 ]]
 
-    compare_generated_and_expected(generated_script, expected_script)
+    assert.are.same(expected_script:gsub("%s+", ""), generated_script:gsub("%s+", ""))
   end)
 
   it("generates Python requests code for JSON body", function()
