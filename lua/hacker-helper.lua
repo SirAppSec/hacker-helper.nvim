@@ -60,7 +60,7 @@ local config = {
     decode_prefix = "d", -- <leader>rd (Decode Group)
     encode_url = "u", -- <leader>rdeu (URL Encode)
     hash_prefix = "c", -- <leader>rc (Hash Group)
-    scripts_prefix = "s",
+    script_prefix = "s",
 
     decode_url = "u", -- <leader>rdu (URL Decode)
     encode_base64 = "b", -- <leader>rdeb (Base64 Encode)
