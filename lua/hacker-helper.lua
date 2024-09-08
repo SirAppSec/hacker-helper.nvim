@@ -60,7 +60,7 @@ local config = {
     decode_prefix = "d", -- <leader>rd (Decode Group)
     encode_url = "u", -- <leader>rdeu (URL Encode)
     hash_prefix = "c", -- <leader>rc (Hash Group)
-    script_prefix = "s",
+    scripts_prefix = "s",
 
     decode_url = "u", -- <leader>rdu (URL Decode)
     encode_base64 = "b", -- <leader>rdeb (Base64 Encode)
@@ -288,7 +288,7 @@ end, { noremap = true, silent = true, desc = "Scrypt Hash" })
 -- Scripts/snippets are under <leader>rs
 vim.keymap.set(
   "v",
-  M.config.prefix .. M.config.keys.script_prefix .. M.config.keys.script_http_to_python_body,
+  M.config.prefix .. M.config.keys.scripts_prefix .. M.config.keys.script_http_to_python_body,
   function()
     selection_util.transform_selection(function(selection)
       local request = http_to_python.parse_http_request(selection)
@@ -300,7 +300,7 @@ vim.keymap.set(
 
 vim.keymap.set(
   "v",
-  M.config.prefix .. M.config.keys.script_prefix .. M.config.keys.script_http_to_python_json,
+  M.config.prefix .. M.config.keys.scripts_prefix .. M.config.keys.script_http_to_python_json,
   function()
     selection_util.transform_selection(function(selection)
       local request = http_to_python.parse_http_request(selection)
@@ -312,7 +312,7 @@ vim.keymap.set(
 
 vim.keymap.set(
   "v",
-  M.config.prefix .. M.config.keys.script_prefix .. M.config.keys.script_http_to_python_form,
+  M.config.prefix .. M.config.keys.scripts_prefix .. M.config.keys.script_http_to_python_form,
   function()
     selection_util.transform_selection(function(selection)
       local request = http_to_python.parse_http_request(selection)
