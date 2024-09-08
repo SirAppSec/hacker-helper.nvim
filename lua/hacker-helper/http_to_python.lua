@@ -1,49 +1,5 @@
 local M = {}
 
--- Utility function to detect and parse an HTTP request from the selection
-M.parse_http_request = function(selection)
-  local request = {
-    method = nil,
-    url = nil,
-    headers = {},
-    cookies = {},
-    body = nil,
-  }
-
-  -- Loop through each line to detect method, headers, and body
-  local in_headers = true
-  for _, line in ipairs(selection) do
-    if line:match("^%a+ /") then
-      -- HTTP Method and URL (e.g., GET /path HTTP/1.1)
-      local method, url = line:match("^(%a+) (.-) HTTP")
-      request.method = method
-      request.url = url
-    elseif in_headers and line:find(": ") then
-      -- Headers
-      local key, value = line:match("^(.-): (.*)$")
-      if key:lower() == "cookie" then
-        -- Parse cookies separately
-        for cookie in value:gmatch("([^;]+)") do
-          local name, val = cookie:match("([^=]+)=([^;]+)")
-          if name and val then
-            request.cookies[name:gsub("^%s+", "")] = val -- Trim leading spaces from cookie names
-          end
-        end
-      else
-        request.headers[key] = value
-      end
-    elseif line == "" then
-      -- End of headers
-      in_headers = false
-    elseif not in_headers then
-      -- Body (if any)
-      request.body = request.body and (request.body .. "\n" .. line) or line
-    end
-  end
-
-  return request
-end
-
 -- Utility function to convert request body to dictionary format (if applicable)
 M.convert_to_dict = function(body)
   local dict_body = {}
@@ -61,11 +17,88 @@ M.convert_to_dict = function(body)
   return dict_body
 end
 
--- Function to convert HTTP request to Python 'requests' code
+-- Utility function to URL-encode form-data
+M.convert_to_form_data = function(body)
+  local encoded_data = {}
+
+  -- Assuming body is already in a dictionary-like structure
+  for key, value in pairs(body) do
+    table.insert(encoded_data, string.format("%s=%s", key, value))
+  end
+
+  return table.concat(encoded_data, "&")
+end
+-- Custom function to capture the visual selection for HTTP to Python conversion
+M.capture_http_selection = function()
+  -- Reselect the current visual block to ensure the latest selection is active
+  vim.cmd("normal! gv")
+
+  -- Get the visual selection range using visual marks
+  local start_pos = vim.fn.getpos("'<")
+  local end_pos = vim.fn.getpos("'>")
+
+  -- Get the selected lines as a list of lines
+  local start_line = math.min(start_pos[2], end_pos[2])
+  local end_line = math.max(start_pos[2], end_pos[2])
+  local selection = vim.fn.getline(start_line, end_line)
+
+  -- Remove trailing ^M characters from each line (if they exist)
+  for i, line in ipairs(selection) do
+    selection[i] = line:gsub("\r$", "") -- Handle ^M
+  end
+
+  return selection
+end
+
+-- Function to parse the HTTP request from the selected lines
+M.parse_http_request = function(selection)
+  local request = {
+    method = nil,
+    url = nil,
+    headers = {},
+    cookies = {},
+    body = nil,
+  }
+
+  -- Loop through each line to detect method, headers, and body
+  local in_headers = true
+  for _, line in ipairs(selection) do
+    -- Detect HTTP Method and URL (e.g., GET /path HTTP/1.1)
+    if line:match("^%a+ /") then
+      local method, url = line:match("^(%a+) (.-) HTTP")
+      request.method = method
+      request.url = url
+    elseif in_headers and line:find(": ") then
+      -- Parse Headers
+      local key, value = line:match("^(.-): (.*)$")
+      if key:lower() == "cookie" then
+        -- Parse cookies separately
+        for cookie in value:gmatch("([^;]+)") do
+          local name, val = cookie:match("([^=]+)=([^;]+)")
+          if name and val then
+            request.cookies[name:gsub("^%s+", "")] = val -- Trim leading spaces
+          end
+        end
+      else
+        request.headers[key] = value
+      end
+    elseif line == "" then
+      -- End of headers
+      in_headers = false
+    elseif not in_headers then
+      -- Body (if any)
+      request.body = request.body and (request.body .. "\n" .. line) or line
+    end
+  end
+
+  return request
+end
+
+-- Example function to convert the parsed HTTP request to Python requests code
 M.generate_python_requests_script = function(request, body_type)
   -- Construct base Python script
   local python_code = "import requests\n\n"
-  python_code = python_code .. string.format('url = "%s"\n\n', request.url)
+  python_code = python_code .. string.format('url = "%s"\n', request.url)
 
   -- Handle headers
   python_code = python_code .. "headers = {\n"
@@ -97,20 +130,18 @@ M.generate_python_requests_script = function(request, body_type)
         request.body
       )
   elseif body_type == "json" then
-    python_code = python_code .. string.format("json_body = %s\n", request.body) -- Ensure valid JSON format
+    python_code = python_code .. string.format("json_body = %s\n", request.body) -- Make sure this is valid JSON
     python_code = python_code
       .. string.format(
         "response = requests.%s(url, headers=headers, cookies=cookies, json=json_body)\n",
         request.method:lower()
       )
   elseif body_type == "form-data" then
-    -- URL-encode the form-data
-    local encoded_form_data = M.convert_to_form_data(request.body)
+    python_code = python_code .. string.format("form_data = %s\n", request.body)
     python_code = python_code
       .. string.format(
-        'response = requests.%s(url, headers=headers, cookies=cookies, data="%s")\n',
-        request.method:lower(),
-        encoded_form_data
+        "response = requests.%s(url, headers=headers, cookies=cookies, data=form_data)\n",
+        request.method:lower()
       )
   end
 
@@ -134,17 +165,4 @@ except ValueError:
 
   return python_code
 end
-
--- Utility function to URL-encode form-data
-M.convert_to_form_data = function(body)
-  local encoded_data = {}
-
-  -- Assuming body is already in a dictionary-like structure
-  for key, value in pairs(body) do
-    table.insert(encoded_data, string.format("%s=%s", key, value))
-  end
-
-  return table.concat(encoded_data, "&")
-end
-
 return M
