@@ -1,13 +1,16 @@
 local M = {}
 
--- Utility function to convert request body to dictionary format (if applicable)
+-- Utility function to convert URL-encoded form-data into a dictionary-like structure
 M.convert_to_dict = function(body)
   local dict_body = {}
 
   for line in body:gmatch("[^&]+") do
     local key, value = line:match("([^=]+)=([^=]+)")
     if key and value then
-      dict_body[key] = value
+      -- Decode URL-encoded keys and values
+      key = vim.fn.system("python3 -c 'import urllib.parse; print(urllib.parse.unquote(\"" .. key .. "\"))'")
+      value = vim.fn.system("python3 -c 'import urllib.parse; print(urllib.parse.unquote(\"" .. value .. "\"))'")
+      dict_body[key:gsub("%s+$", "")] = value:gsub("%s+$", "") -- Trim newlines added by Python's system call
     else
       -- If it can't be parsed, return as raw string
       return nil
@@ -15,18 +18,6 @@ M.convert_to_dict = function(body)
   end
 
   return dict_body
-end
-
--- Utility function to URL-encode form-data
-M.convert_to_form_data = function(body)
-  local encoded_data = {}
-
-  -- Assuming body is already in a dictionary-like structure
-  for key, value in pairs(body) do
-    table.insert(encoded_data, string.format("%s=%s", key, value))
-  end
-
-  return table.concat(encoded_data, "&")
 end
 
 -- Custom function to capture the visual selection for HTTP to Python conversion and replace the selected lines
@@ -92,6 +83,9 @@ M.parse_http_request = function(selection)
             request.cookies[name:gsub("^%s+", "")] = val -- Trim leading spaces
           end
         end
+      elseif key:lower() == "host" then
+        -- Handle the Host header as part of the URL
+        request.url = string.format("http://%s%s", value, request.url)
       else
         request.headers[key] = value
       end
@@ -113,7 +107,7 @@ M.generate_python_requests_script = function(request, body_type)
   local python_code = "import requests\n\n"
   python_code = python_code .. string.format('url = "%s"\n', request.url)
 
-  -- Handle headers
+  -- Handle headers (excluding the Host header)
   python_code = python_code .. "headers = {\n"
   for key, value in pairs(request.headers) do
     python_code = python_code .. string.format('    "%s": "%s",\n', key, value)
@@ -150,7 +144,8 @@ M.generate_python_requests_script = function(request, body_type)
         request.method:lower()
       )
   elseif body_type == "form-data" then
-    python_code = python_code .. string.format("form_data = %s\n", request.body)
+    local decoded_body = M.convert_to_dict(request.body)
+    python_code = python_code .. string.format("form_data = %s\n", vim.inspect(decoded_body))
     python_code = python_code
       .. string.format(
         "response = requests.%s(url, headers=headers, cookies=cookies, data=form_data)\n",
@@ -178,4 +173,5 @@ except ValueError:
 
   return python_code
 end
+
 return M
