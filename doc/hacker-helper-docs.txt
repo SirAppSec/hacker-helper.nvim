@@ -1,4 +1,4 @@
-*hacker-helper-docs.txt*   For Neovim >= 0.8.0  Last change: 2024 September 08
+*hacker-helper-docs.txt*   For Neovim >= 0.8.0  Last change: 2024 September 09
 
 ==============================================================================
 Table of Contents                       *hacker-helper-docs-table-of-contents*
@@ -6,6 +6,7 @@ Table of Contents                       *hacker-helper-docs-table-of-contents*
 1. Hacker Helper                            |hacker-helper-docs-hacker-helper|
 2. Requirements                              |hacker-helper-docs-requirements|
   - Using it                        |hacker-helper-docs-requirements-using-it|
+  - RoadMap                          |hacker-helper-docs-requirements-roadmap|
 3. Links                                            |hacker-helper-docs-links|
 
 ==============================================================================
@@ -73,6 +74,16 @@ USING IT                            *hacker-helper-docs-requirements-using-it*
       },
     }
 <
+
+
+ROADMAP                              *hacker-helper-docs-requirements-roadmap*
+
+1. fix issues with selection
+2. add some tests for selection(difficult borderline-unnecessary)
+3. Add scrape for advanced xss
+4. use python HTTP.server on current folder/path `python3 -m http.server -d /path/to/web/dir`
+5. host a simple attack server to serve XMLHttpRequests
+6. paste polygloats/payloads/reverseshells `https://github.com/0xsobky/HackVault/wiki/Unleashing-an-Ultimate-XSS-Polyglot`
 
 ==============================================================================
 3. Links                                            *hacker-helper-docs-links*
